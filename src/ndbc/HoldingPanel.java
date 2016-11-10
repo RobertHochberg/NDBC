@@ -16,11 +16,13 @@ public class HoldingPanel extends javax.swing.JPanel {
 	
 	JSpinner x;
 	JLabel numSharesLabel;
+	JLabel priceLabel;
 	
 	public HoldingPanel(String name, int value, double price){
 		// Initialize Fields
 		this.name = name;
 		this.price = price;
+		this.priceLabel = new JLabel(String.valueOf(price/100.0));
 		this.numShares = value;
 		this.numSharesLabel = new JLabel();
 		this.numSharesLabel.setText(" " + String.valueOf(numShares));
@@ -34,7 +36,7 @@ public class HoldingPanel extends javax.swing.JPanel {
 		this.setBorder(BorderFactory.createRaisedBevelBorder());
 		this.setLayout(new GridLayout(2, 2));
 		this.add(new JLabel("  " + name));
-		this.add(new JLabel("  Next"));
+		this.add(priceLabel);
 		this.add(numSharesLabel);
 		this.add(x);
 		this.setVisible(true);
@@ -43,6 +45,15 @@ public class HoldingPanel extends javax.swing.JPanel {
 	public void setNumShares(int n){
 		this.numShares = n;
 		this.numSharesLabel.setText(String.valueOf(numShares));
+		this.repaint();
+	}
+	
+	/*
+	 * Sets the price to n cents
+	 */
+	public void setPrice(int n){
+		this.price = n;
+		this.numSharesLabel.setText(String.valueOf(price/100.0));
 		this.repaint();
 	}
 	
