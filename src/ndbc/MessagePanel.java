@@ -84,7 +84,7 @@ public class MessagePanel extends JPanel implements ActionListener{
 		String instanceConnectionName = "mineral-brand-148217:us-central1:first";
 		String databaseName = "ndbc";
 		String username = "jwilson";
-		String password = "backgammon";
+		String password = "fake";
 		String jdbcUrl = String.format(
 				"jdbc:mysql://google/%s?cloudSqlInstance=%s&"
 						+ "socketFactory=com.google.cloud.sql.mysql.SocketFactory",
@@ -136,7 +136,7 @@ public class MessagePanel extends JPanel implements ActionListener{
 		String instanceConnectionName = "mineral-brand-148217:us-central1:first";
 		String databaseName = "ndbc";
 		String username = "jwilson";
-		String password = "backgammon";
+		String password = "fake";
 		String jdbcUrl = String.format(
 				"jdbc:mysql://google/%s?cloudSqlInstance=%s&"
 						+ "socketFactory=com.google.cloud.sql.mysql.SocketFactory",
