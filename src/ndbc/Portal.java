@@ -1,7 +1,9 @@
 package ndbc;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.GridLayout;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -9,10 +11,14 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.HashMap;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
 
 public class Portal extends JFrame{
 	String[] stocks = {"ONC", "EUP", "ONA", "MID", "NIG",
@@ -31,9 +37,19 @@ public class Portal extends JFrame{
 	double currentNetWorth;
 	JLabel currentCashLabel;
 	JLabel currentNetWorthLabel;
-	int secondsLeft;
+	public int secondsLeft;
 	JLabel secondsLeftLabel;
 	String nullpw = "";
+	
+	// Message panel
+	MessagePanel messagePanel;
+	
+	// Schedules the background updater
+	GameTimer gameTimer;
+	
+	// Player panel. This is customizable by y'all
+	JPanel playerPanel;
+	
 
 	public static void main(String[] args) {
 		new Portal();
@@ -75,11 +91,22 @@ public class Portal extends JFrame{
 		statusPanel.add(currentNetWorthLabel);
 		statusPanel.add(secondsLeftLabel);
 		this.add(statusPanel, BorderLayout.NORTH);
-
+		
+		// Set up the messaging panel
+		messagePanel = new MessagePanel();
+		this.add(messagePanel, BorderLayout.CENTER);
+		
+		// Set up the player panel
+		playerPanel = new JPanel();
+		playerPanel.setPreferredSize(new Dimension(300, 800));
+		playerPanel.setBackground(Color.YELLOW);
+		this.add(playerPanel, BorderLayout.EAST);
 
 		this.pack();
 		this.setVisible(true);
-		test();
+		messagePanel.update();
+		
+		startGame();
 	}
 	
 	/*
@@ -117,7 +144,19 @@ public class Portal extends JFrame{
 	}
 
 	
-
+	void startGame(){
+		gameTimer = new GameTimer(this);
+		gameTimer.start();
+	}
+	
+	void updateStatusPanel(){
+		this.currentCashLabel.setText(String.valueOf(currentCash));
+		this.currentNetWorthLabel.setText(String.valueOf(currentNetWorth));
+		this.secondsLeftLabel.setText(String.valueOf(secondsLeft));
+		this.statusPanel.repaint();
+	}
+	
+	
 	/*
 	 * Written to be used once, to set the starting prices of our 30 stocks.
 	 */
