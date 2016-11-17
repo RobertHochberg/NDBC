@@ -21,15 +21,11 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 
 public class Portal extends JFrame{
-	String[] stocks = {"ONC", "EUP", "ONA", "MID", "NIG",
-			"HTD", "REA", "RYA", "SIP", "OND", 
-			"ERE", "DWE", "AKA", "NDW", "EAR",
-			"YOV", "ERM", "ANY", "AQU", "AIN",
-			"TAN", "DCU", "RIO", "OUS", "VOL",
-			"UME", "OFF", "ORG", "OTT", "ENL"};
+	String[] stocks = Constants.stocks;
 
 	// Panel to display the current and next stock holdings
 	JPanel holdingsPanel;
+	public HashMap<String, HoldingPanel> stockOrders; // Map from symbol to panel
 
 	// Top strip showing current status
 	JPanel statusPanel;
@@ -66,9 +62,11 @@ public class Portal extends JFrame{
 		holdingsPanel = new JPanel();
 		holdingsPanel.setLayout(new GridLayout(10, 3));
 		HashMap<String, Integer> centsPrices = getCentsPrices();
+		stockOrders = new HashMap<>();
 		for(String s : stocks){
 			HoldingPanel hp = new HoldingPanel(s, 0, centsPrices.get(s));
 			holdingsPanel.add(hp);
+			stockOrders.put(s, hp);	// Add map entry from symbol to the panel
 		}
 		this.add(holdingsPanel, BorderLayout.WEST);
 
@@ -98,14 +96,20 @@ public class Portal extends JFrame{
 		
 		// Set up the player panel
 		playerPanel = new JPanel();
+		UTeamPanel uteamPanel = new UTeamPanel();
+		DTeamPanel dteamPanel = new DTeamPanel();
 		playerPanel.setPreferredSize(new Dimension(300, 800));
-		playerPanel.setBackground(Color.YELLOW);
+		playerPanel.setLayout(new GridLayout(2, 1));
+		playerPanel.add(uteamPanel);
+		playerPanel.add(dteamPanel);
 		this.add(playerPanel, BorderLayout.EAST);
 
 		this.pack();
 		this.setVisible(true);
 		messagePanel.update();
 		
+		//UserData.initializeHoldingsInDatabase();
+		UserData.populateHoldingsFromDatabase();
 		startGame();
 	}
 	
@@ -116,8 +120,8 @@ public class Portal extends JFrame{
 	HashMap<String, Integer> getCentsPrices(){
 		String instanceConnectionName = "mineral-brand-148217:us-central1:first";
 		String databaseName = "ndbc";
-		String username = "jwilson";
-		String password = "fake";
+		String username = UserData.USER;
+		String password = UserData.PW;
 		String jdbcUrl = String.format(
 				"jdbc:mysql://google/%s?cloudSqlInstance=%s&"
 						+ "socketFactory=com.google.cloud.sql.mysql.SocketFactory",
@@ -163,8 +167,8 @@ public class Portal extends JFrame{
 	void setCentsPrices(){
 		String instanceConnectionName = "mineral-brand-148217:us-central1:first";
 		String databaseName = "ndbc";
-		String username = "jwilson";
-		String password = "fake";
+		String username = UserData.USER;
+		String password = UserData.PW;
 		String jdbcUrl = String.format(
 				"jdbc:mysql://google/%s?cloudSqlInstance=%s&"
 						+ "socketFactory=com.google.cloud.sql.mysql.SocketFactory",
@@ -187,37 +191,4 @@ public class Portal extends JFrame{
 			e.printStackTrace();
 		}
 	}
-	
-	
-	/*
-	 * Delete soon...
-	 */
-	void test(){
-		String instanceConnectionName = "mineral-brand-148217:us-central1:first";
-		String databaseName = "ndbc";
-		String username = "jwilson";
-		String password = "fake";
-		String jdbcUrl = String.format(
-				"jdbc:mysql://google/%s?cloudSqlInstance=%s&"
-						+ "socketFactory=com.google.cloud.sql.mysql.SocketFactory",
-						databaseName,
-						instanceConnectionName);
-
-		Connection connection = null;
-		try {
-			connection = DriverManager.getConnection(jdbcUrl, username, password);
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-
-		try (Statement statement = connection.createStatement()) {
-			ResultSet resultSet = statement.executeQuery("show tables from ndbc;");
-			while (resultSet.next()) {
-				System.out.println(resultSet.getString(1));
-			}
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-	}
-
 }
