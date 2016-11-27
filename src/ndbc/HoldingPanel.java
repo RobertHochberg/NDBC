@@ -14,9 +14,9 @@ public class HoldingPanel extends javax.swing.JPanel {
 	double price;
 	String name;
 	
-	JSpinner orderSpinner;
-	JLabel numSharesLabel;
-	JLabel priceLabel;
+	JSpinner orderSpinner;  // The amount the user wants to own
+	JLabel numSharesLabel;	// The # of shares the user currently owns
+	JLabel priceLabel;		// Current price of the stock
 	
 	public HoldingPanel(String name, int value, double price){
 		// Initialize Fields
@@ -31,6 +31,7 @@ public class HoldingPanel extends javax.swing.JPanel {
 		// Users can own up to 100 shares
 		SpinnerModel model = new SpinnerNumberModel(value, 0, 100, 1);
 		orderSpinner = new JSpinner(model);
+		orderSpinner.setEditor(new JSpinner.DefaultEditor(orderSpinner));
 		
 		// Build the component
 		this.setPreferredSize(new Dimension(120, 30));
@@ -46,6 +47,7 @@ public class HoldingPanel extends javax.swing.JPanel {
 	public void setNumShares(int n){
 		this.numShares = n;
 		this.numSharesLabel.setText(String.valueOf(numShares));
+		this.orderSpinner.setValue(n);
 		this.repaint();
 	}
 	
@@ -54,7 +56,7 @@ public class HoldingPanel extends javax.swing.JPanel {
 	 */
 	public void setPrice(int n){
 		this.price = n;
-		this.numSharesLabel.setText(String.valueOf(price/100.0));
+		this.priceLabel.setText(String.valueOf(price/100.0));
 		this.repaint();
 	}
 	
@@ -64,12 +66,24 @@ public class HoldingPanel extends javax.swing.JPanel {
 	public int getDesiredNumShares(){
 		return (Integer)orderSpinner.getValue();
 	}
+	
+	/*
+	 * Returns the number of shares indicated in the spinner
+	 */
+	public void setDesiredNumShares(Integer n){
+		orderSpinner.setValue(n);
+	}
 
 	/*
 	 * Getter for the price
 	 */
 	public double getPrice() {
 		return price;
+	}
+	
+	@Override
+	public void enable(boolean b){
+		orderSpinner.setEnabled(b);
 	}
 
 

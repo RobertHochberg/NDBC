@@ -36,16 +36,19 @@ public class Portal extends JFrame{
 	public int secondsLeft;
 	JLabel secondsLeftLabel;
 	String nullpw = "";
-	
+
 	// Message panel
 	MessagePanel messagePanel;
-	
+
 	// Schedules the background updater
 	GameTimer gameTimer;
-	
+
+	// Schedules the administration tasks
+	AdminTasks adminTasks;
+
 	// Player panel. This is customizable by y'all
 	JPanel playerPanel;
-	
+
 
 	public static void main(String[] args) {
 		new Portal();
@@ -89,15 +92,17 @@ public class Portal extends JFrame{
 		statusPanel.add(currentNetWorthLabel);
 		statusPanel.add(secondsLeftLabel);
 		this.add(statusPanel, BorderLayout.NORTH);
-		
+
 		// Set up the messaging panel
 		messagePanel = new MessagePanel();
 		this.add(messagePanel, BorderLayout.CENTER);
-		
+
 		// Set up the player panel
 		playerPanel = new JPanel();
 		UTeamPanel uteamPanel = new UTeamPanel();
+		uteamPanel.setBackground(Color.white);
 		DTeamPanel dteamPanel = new DTeamPanel();
+		dteamPanel.setBackground(new Color(0, 35, 102));
 		playerPanel.setPreferredSize(new Dimension(300, 800));
 		playerPanel.setLayout(new GridLayout(2, 1));
 		playerPanel.add(uteamPanel);
@@ -107,12 +112,13 @@ public class Portal extends JFrame{
 		this.pack();
 		this.setVisible(true);
 		messagePanel.update();
-		
+
 		//UserData.initializeHoldingsInDatabase();
 		UserData.populateHoldingsFromDatabase();
 		startGame();
+		startAdminTasks();
 	}
-	
+
 	/*
 	 * Queries the database for the starting prices of our stocks.
 	 * Also, a model for sending sql queries.
@@ -137,7 +143,7 @@ public class Portal extends JFrame{
 
 		HashMap<String, Integer> rv = new HashMap<>();
 		try (Statement statement = connection.createStatement()) {
-			ResultSet resultSet = statement.executeQuery("select symbol, price from ndbc.startPrices;");
+			ResultSet resultSet = statement.executeQuery("SELECT symbol, currentPrice FROM stocks;");
 			while (resultSet.next()) {
 				rv.put(resultSet.getString(1), resultSet.getInt(2));
 			}
@@ -147,48 +153,44 @@ public class Portal extends JFrame{
 		return rv;
 	}
 
-	
+
 	void startGame(){
 		gameTimer = new GameTimer(this);
 		gameTimer.start();
 	}
-	
+
+
+	void startAdminTasks(){
+		adminTasks = new AdminTasks();
+		adminTasks.start();
+	}
+
 	void updateStatusPanel(){
 		this.currentCashLabel.setText(String.valueOf(currentCash));
 		this.currentNetWorthLabel.setText(String.valueOf(currentNetWorth));
 		this.secondsLeftLabel.setText(String.valueOf(secondsLeft));
 		this.statusPanel.repaint();
 	}
+
+	/*
+	 * Looks at the holdings hash map in UserData and updates the panels
+	 * accordingly.
+	 */
+	public void updateHoldingsPanel(){
+		HashMap<String, Integer> centsPrices = getCentsPrices();
+		for(String stock : Constants.stocks){
+			stockOrders.get(stock).setNumShares(UserData.holdings.get(stock));
+			stockOrders.get(stock).setPrice(centsPrices.get(stock));
+		}
+	}
 	
 	
 	/*
-	 * Written to be used once, to set the starting prices of our 30 stocks.
+	 * Make all the HoldingPanels on the panel manipulable.
 	 */
-	void setCentsPrices(){
-		String instanceConnectionName = "mineral-brand-148217:us-central1:first";
-		String databaseName = "ndbc";
-		String username = UserData.USER;
-		String password = UserData.PW;
-		String jdbcUrl = String.format(
-				"jdbc:mysql://google/%s?cloudSqlInstance=%s&"
-						+ "socketFactory=com.google.cloud.sql.mysql.SocketFactory",
-						databaseName,
-						instanceConnectionName);
-
-		Connection connection = null;
-		try {
-			connection = DriverManager.getConnection(jdbcUrl, username, password);
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-
-		try (Statement statement = connection.createStatement()) {
-			for(String s : stocks){
-				int price = ((int)(Math.random()*1000));
-				statement.execute("INSERT INTO ndbc.startPrices VALUES('" + s + "','" + price + "');");
-			}
-		} catch (SQLException e) {
-			e.printStackTrace();
+	void setOrderable(boolean b){
+		for(String s : Constants.stocks){
+			this.stockOrders.get(s).enable(b);
 		}
 	}
 }

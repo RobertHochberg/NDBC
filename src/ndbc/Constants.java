@@ -9,6 +9,13 @@ public class Constants {
 			"TAN", "DCU", "RIO", "OUS", "VOL",
 			"UME", "OFF", "ORG", "OTT", "ENL"};
 	
+	static String[] companies = {"OncoGenius", "European Polo", "", "", "",
+			"", "", "", "", "",
+			"", "", "", "", "",
+			"", "", "", "", "",
+			"", "", "", "", "",
+			"", "", "", "", ""};
+	
 	static String[] users = {"jbaumann", "bmccutchon", "jyamauchi", "mbolot", 
 		"jwilson", "rgrosso", "bholdridge", "kbeine", "asokol", "aborse", "root"};
 }

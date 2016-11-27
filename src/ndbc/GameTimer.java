@@ -22,25 +22,31 @@ public class GameTimer extends Thread {
 	@Override
 	public void run() {
 		int ORDER_PERIOD = 20; // Must be at least 20
-		int state, ORDER=1, CHECK=2;
-		state = 2;
+		int state, PULL=1, WAIT=2, ORDER=3;
+		state = PULL;
+		portal.setOrderable(false);
 		while(true){
 			long elapsedTime = System.currentTimeMillis() - startTime;
 			timeLeft = (int)(ORDER_PERIOD - elapsedTime/1000.0);
 			portal.secondsLeft = timeLeft;
 			portal.updateStatusPanel();
 
-			if(timeLeft < ORDER_PERIOD-10 && state == CHECK){
-				state = ORDER;
+			// If State == PULL, update from the database
+			if(timeLeft > 10 && state == PULL){
 				UserData.populateHoldingsFromDatabase();
-				UserData.updateHoldingsPanel();
+				portal.updateHoldingsPanel();
+				state = WAIT;
+				portal.setOrderable(true);
 			}
-			// Check to see if we have to do work
-			if(timeLeft < 0){
+			
+			// Check to see if there are orders to do
+			if(timeLeft < 5 && state == WAIT){
+				portal.setOrderable(false);
 				makeBuys();
 				makeSells();
 
 				startTime = System.currentTimeMillis();
+				state = PULL;
 			}
 
 			try {
@@ -86,7 +92,9 @@ public class GameTimer extends Thread {
 					statement.addBatch();
 				}
 			}
-			statement.executeBatch();
+			int[] rowsChanged = statement.executeBatch();
+			for(int i : rowsChanged) if(i == 0) System.out.println("Error Occurred in making buys.");
+			
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
