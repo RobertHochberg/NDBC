@@ -1,5 +1,6 @@
 package ndbc;
 
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.GridLayout;
 
@@ -8,8 +9,10 @@ import javax.swing.JLabel;
 import javax.swing.JSpinner;
 import javax.swing.SpinnerModel;
 import javax.swing.SpinnerNumberModel;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 
-public class HoldingPanel extends javax.swing.JPanel {
+public class HoldingPanel extends javax.swing.JPanel implements ChangeListener {
 	int numShares;
 	double price;
 	String name;
@@ -32,6 +35,7 @@ public class HoldingPanel extends javax.swing.JPanel {
 		SpinnerModel model = new SpinnerNumberModel(value, 0, 100, 1);
 		orderSpinner = new JSpinner(model);
 		orderSpinner.setEditor(new JSpinner.DefaultEditor(orderSpinner));
+		orderSpinner.addChangeListener(this);
 		
 		// Build the component
 		this.setPreferredSize(new Dimension(120, 30));
@@ -48,6 +52,7 @@ public class HoldingPanel extends javax.swing.JPanel {
 		this.numShares = n;
 		this.numSharesLabel.setText(String.valueOf(numShares));
 		this.orderSpinner.setValue(n);
+		this.setBackground(Color.LIGHT_GRAY);
 		this.repaint();
 	}
 	
@@ -84,6 +89,17 @@ public class HoldingPanel extends javax.swing.JPanel {
 	@Override
 	public void enable(boolean b){
 		orderSpinner.setEnabled(b);
+	}
+
+	@Override
+	public void stateChanged(ChangeEvent e) {
+		if((Integer) orderSpinner.getValue() > numShares)
+			this.setBackground(new Color(200, 255, 200));
+		else if((Integer) orderSpinner.getValue() < numShares)
+			this.setBackground(new Color(255, 200, 200));
+		else
+			this.setBackground(Color.LIGHT_GRAY);
+		
 	}
 
 

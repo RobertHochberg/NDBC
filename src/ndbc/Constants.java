@@ -1,5 +1,7 @@
 package ndbc;
 
+import java.util.HashMap;
+
 public class Constants {
 
 	static String[] stocks = {"ONC", "EUP", "ONA", "MID", "NIG",
@@ -18,4 +20,8 @@ public class Constants {
 	
 	static String[] users = {"jbaumann", "bmccutchon", "jyamauchi", "mbolot", 
 		"jwilson", "rgrosso", "bholdridge", "kbeine", "asokol", "aborse", "root"};
+	
+	static HashMap<String, String[]> manages;
+	
+	static int GAME_PERIOD = 20;
 }

@@ -21,13 +21,12 @@ public class GameTimer extends Thread {
 
 	@Override
 	public void run() {
-		int ORDER_PERIOD = 20; // Must be at least 20
 		int state, PULL=1, WAIT=2, ORDER=3;
 		state = PULL;
 		portal.setOrderable(false);
 		while(true){
 			long elapsedTime = System.currentTimeMillis() - startTime;
-			timeLeft = (int)(ORDER_PERIOD - elapsedTime/1000.0);
+			timeLeft = (int)(Constants.GAME_PERIOD - elapsedTime/1000.0);
 			portal.secondsLeft = timeLeft;
 			portal.updateStatusPanel();
 
@@ -40,11 +39,16 @@ public class GameTimer extends Thread {
 			}
 			
 			// Check to see if there are orders to do
-			if(timeLeft < 5 && state == WAIT){
+			if(timeLeft < 1 && state == WAIT){
+				state = ORDER;
 				portal.setOrderable(false);
+				// Create transactions
 				makeBuys();
 				makeSells();
-
+				 // Process transactions
+				AdminTasks.updateSnapshot();
+				portal.updateHoldingsPanel();
+				
 				startTime = System.currentTimeMillis();
 				state = PULL;
 			}

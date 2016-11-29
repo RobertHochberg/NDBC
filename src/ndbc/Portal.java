@@ -29,10 +29,10 @@ public class Portal extends JFrame{
 
 	// Top strip showing current status
 	JPanel statusPanel;
-	double currentCash;
-	double currentNetWorth;
+	double currentOrder;
 	JLabel currentCashLabel;
 	JLabel currentNetWorthLabel;
+	JLabel currentOrderLabel;
 	public int secondsLeft;
 	JLabel secondsLeftLabel;
 	String nullpw = "";
@@ -51,8 +51,20 @@ public class Portal extends JFrame{
 
 
 	public static void main(String[] args) {
+		initialize();
 		new Portal();
 
+	}
+
+	// Do some initialization tasks before creating the portal
+	private static void initialize(){
+		// Build the manages hashmap
+		Constants.manages = new HashMap<>();
+		for(int i = 0; i < 30; i++){
+			if(!Constants.manages.containsKey(Constants.users[i/3]))
+				Constants.manages.put(Constants.users[i/3], new String[3]);
+			Constants.manages.get(Constants.users[i/3])[i%3] = Constants.stocks[i];
+		}
 	}
 
 	public Portal(){
@@ -76,19 +88,19 @@ public class Portal extends JFrame{
 		// Set up the Status Panel
 		statusPanel = new JPanel();
 		statusPanel.setPreferredSize(new Dimension(1100, 30));
-		this.currentCash = 1000.0;
-		this.currentNetWorth = 1000.0;
+		this.currentOrder = 0.0;
 		this.currentCashLabel = new JLabel();
-		this.currentCashLabel.setText(String.valueOf(currentCash));
+		this.currentCashLabel.setText(String.valueOf(UserData.currentCash));
 		this.currentNetWorthLabel = new JLabel();
-		this.currentNetWorthLabel.setText(String.valueOf(currentNetWorth));
+		this.currentNetWorthLabel.setText(String.valueOf(UserData.currentNetWorth));
+		this.currentOrderLabel = new JLabel();
+		this.currentOrderLabel.setText(String.valueOf(currentOrder));
 		secondsLeft = 60;
 		this.secondsLeftLabel = new JLabel();
 		this.secondsLeftLabel.setText(String.valueOf(secondsLeft));
 
-		statusPanel.add(new JLabel("Cash"));
+		statusPanel.setLayout(new GridLayout(1, 4));
 		statusPanel.add(currentCashLabel);
-		statusPanel.add(new JLabel("Net Worth"));
 		statusPanel.add(currentNetWorthLabel);
 		statusPanel.add(secondsLeftLabel);
 		this.add(statusPanel, BorderLayout.NORTH);
@@ -113,7 +125,6 @@ public class Portal extends JFrame{
 		this.setVisible(true);
 		messagePanel.update();
 
-		//UserData.initializeHoldingsInDatabase();
 		UserData.populateHoldingsFromDatabase();
 		startGame();
 		startAdminTasks();
@@ -166,9 +177,10 @@ public class Portal extends JFrame{
 	}
 
 	void updateStatusPanel(){
-		this.currentCashLabel.setText(String.valueOf(currentCash));
-		this.currentNetWorthLabel.setText(String.valueOf(currentNetWorth));
-		this.secondsLeftLabel.setText(String.valueOf(secondsLeft));
+		this.currentCashLabel.setText("Cash: $" + String.valueOf(UserData.currentCash/100.0));
+		this.currentOrderLabel.setText("Order Amount: " + String.valueOf(currentOrder));
+		this.currentNetWorthLabel.setText("Net Worth: $" + String.valueOf(UserData.currentNetWorth/100.0));
+		this.secondsLeftLabel.setText("Time until trade: " + String.valueOf(secondsLeft));
 		this.statusPanel.repaint();
 	}
 
@@ -183,8 +195,8 @@ public class Portal extends JFrame{
 			stockOrders.get(stock).setPrice(centsPrices.get(stock));
 		}
 	}
-	
-	
+
+
 	/*
 	 * Make all the HoldingPanels on the panel manipulable.
 	 */

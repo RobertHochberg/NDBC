@@ -23,7 +23,9 @@ import javax.swing.JTextArea;
 public class MessagePanel extends JPanel implements ActionListener{
 	JTextArea incomingMessageArea;
 	JTextArea myMessageArea;
+	JTextArea secretMessageArea;
 	HashMap<Integer, Message> messages; // Maps ids to messages
+	Message secretMessage; 				// abuse of this class...s
 	JButton sendMessageButton;
 	JButton getMessagesButton;
 	
@@ -42,7 +44,7 @@ public class MessagePanel extends JPanel implements ActionListener{
 		
 		// South Panel to hold buttons and send message area
 		JPanel southPanel = new JPanel();
-		southPanel.setLayout(new GridLayout(2, 1));
+		southPanel.setLayout(new GridLayout(3, 1));
 		
 		// Buttons
 		JPanel buttonPanel = new JPanel();
@@ -62,6 +64,13 @@ public class MessagePanel extends JPanel implements ActionListener{
 		myMessageArea.setFont(new Font("Sans", Font.BOLD, 12));
 		southPanel.add(myMessageArea);
 		
+		// Secret message area
+		secretMessageArea = new JTextArea(3, 50);
+		secretMessageArea.setEditable(true);
+		secretMessageArea.setBackground(Color.LIGHT_GRAY);
+		secretMessageArea.setFont(new Font("Sans", Font.ITALIC, 11));
+		southPanel.add(secretMessageArea);
+		
 		this.add(southPanel, BorderLayout.SOUTH);
 		
 		messages = new HashMap<>();
@@ -74,9 +83,10 @@ public class MessagePanel extends JPanel implements ActionListener{
 	public void update(){
 		this.getMessagesFromDatabase();
 		this.updateIncomingMessageArea();
+		this.updateSecretMessageArea();
 	}
-	
-	
+
+
 	/*
 	 * Grab new messages from the database
 	 */
@@ -112,6 +122,17 @@ public class MessagePanel extends JPanel implements ActionListener{
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
+
+		try (Statement statement = connection.createStatement()) {
+			String queryString = "SELECT recipient, body FROM secretMessages " +
+					"WHERE recipient='" + UserData.USER + "' AND " +
+					"messageId = (SELECT MAX(messageId) from secretMessages where recipient = '" + UserData.USER + "');";
+			ResultSet resultSet = statement.executeQuery(queryString);
+			if(resultSet.next())
+				secretMessage = new Message(0, null, resultSet.getString(2), resultSet.getString(1));
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
 	}
 	
 	/*
@@ -127,6 +148,14 @@ public class MessagePanel extends JPanel implements ActionListener{
 			msgs = msgs + messages.get(i).body + "\n\n";
 		}
 		this.incomingMessageArea.setText(msgs);
+	}
+	
+	/*
+	 * Write messages from our secret messages HashMap to the incoming message area
+	 */
+	private void updateSecretMessageArea(){
+		if(secretMessage != null)
+			this.secretMessageArea.setText("To " + secretMessage.sender + ": " + secretMessage.body);
 	}
 	
 	/*
