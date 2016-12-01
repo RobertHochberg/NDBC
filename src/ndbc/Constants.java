@@ -19,7 +19,7 @@ public class Constants {
 			"", "", "", "", ""};
 	
 	static String[] users = {"jbaumann", "bmccutchon", "jyamauchi", "mbolot", 
-		"jwilson", "rgrosso", "bholdridge", "kbeine", "asokol", "aborse", "root"};
+		"jwilson", "rgrosso", "bholdridge", "kbeine", "asokol", "aborse"};
 	
 	static HashMap<String, String[]> manages;
 	
