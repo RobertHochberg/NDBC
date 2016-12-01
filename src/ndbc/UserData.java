@@ -9,7 +9,8 @@ import java.util.HashMap;
 
 public class UserData {
 	static String USER = "root";
-	static String PW   = "";
+	static String PW   = "duniyvintroy";
+	
 
 	static HashMap<String, Integer> holdings; 	// maps stock symbol to #shares
 	static int currentCash;						// To buy stocks

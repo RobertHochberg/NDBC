@@ -606,4 +606,125 @@ public class AdminTasks extends Thread{
 			e.printStackTrace();
 		}
 	}
+	
+	/*
+	 * Specific granting of privileges to our users
+	 * 
+	 */
+	static void managePrivileges(){
+		String instanceConnectionName = "mineral-brand-148217:us-central1:first";
+		String databaseName = "ndbc";
+		String username = UserData.USER;
+		String password = UserData.PW;
+		String jdbcUrl = String.format(
+				"jdbc:mysql://google/%s?cloudSqlInstance=%s&"
+						+ "socketFactory=com.google.cloud.sql.mysql.SocketFactory",
+						databaseName,
+						instanceConnectionName);
+
+		Connection connection = null;
+		try {
+			connection = DriverManager.getConnection(jdbcUrl, username, password);
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+
+		// Take away all the privileges
+		/*
+		String revoke = "REVOKE INSERT ON ndbc.messages FROM ?@'%'";
+		try (PreparedStatement statement = connection.prepareStatement(revoke)) {
+			for(String s : Constants.users){
+				statement.setString(1, s);
+				statement.addBatch();
+			}
+			statement.executeBatch();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		*/
+
+		// Give the appropriate privileges back
+		String grant  = "GRANT SELECT, INSERT ON ndbc.messages TO ?@'%'";
+		try (PreparedStatement statement = connection.prepareStatement(grant)) {
+			for(String s : Constants.users){
+				statement.setString(1, s);
+				statement.addBatch();
+			}
+			int[] x = statement.executeBatch();
+			System.out.println("Privileges: " + Arrays.toString(x));
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		
+		grant  = "GRANT INSERT ON ndbc.transactions TO ?@'%'";
+		try (PreparedStatement statement = connection.prepareStatement(grant)) {
+			for(String s : Constants.users){
+				statement.setString(1, s);
+				statement.addBatch();
+			}
+			int[] x = statement.executeBatch();
+			System.out.println("Privileges: " + Arrays.toString(x));
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		
+		grant  = "GRANT SELECT ON ndbc.stocks TO ?@'%'";
+		try (PreparedStatement statement = connection.prepareStatement(grant)) {
+			for(String s : Constants.users){
+				statement.setString(1, s);
+				statement.addBatch();
+			}
+			int[] x = statement.executeBatch();
+			System.out.println("Privileges: " + Arrays.toString(x));
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		
+		grant  = "GRANT SELECT ON ndbc.users TO ?@'%'";
+		try (PreparedStatement statement = connection.prepareStatement(grant)) {
+			for(String s : Constants.users){
+				statement.setString(1, s);
+				statement.addBatch();
+			}
+			int[] x = statement.executeBatch();
+			System.out.println("Privileges: " + Arrays.toString(x));
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		
+		grant  = "GRANT SELECT ON ndbc.mySecretMessages TO ?@'%'";
+		try (PreparedStatement statement = connection.prepareStatement(grant)) {
+			for(String s : Constants.users){
+				statement.setString(1, s);
+				statement.addBatch();
+			}
+			int[] x = statement.executeBatch();
+			System.out.println("Privileges: " + Arrays.toString(x));
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		
+		grant  = "GRANT ALL PRIVILEGES ON play.* TO ?@'%'";
+		try (PreparedStatement statement = connection.prepareStatement(grant)) {
+			for(String s : Constants.users){
+				statement.setString(1, s);
+				statement.addBatch();
+			}
+			int[] x = statement.executeBatch();
+			System.out.println("Privileges: " + Arrays.toString(x));
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+
+		// Flush to update right away
+		try (Statement statement = connection.createStatement()) {
+			for(String s : Constants.stocks){
+				int price = ((int)(Math.random()*1000));
+				statement.execute("FLUSH PRIVILEGES;");
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		
+	}
 }
