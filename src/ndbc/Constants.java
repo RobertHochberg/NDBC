@@ -21,6 +21,8 @@ public class Constants {
 	static String[] users = {"jbaumann", "bmccutchon", "jyamauchi", "mbolot", 
 		"jwilson", "rgrosso", "bholdridge", "kbeine", "asokol", "aborse"};
 	
+	// Maps managers to the stocks that they manage
+	// This is populated in the Portal initialize method
 	static HashMap<String, String[]> manages;
 	
 	static int GAME_PERIOD = 20;

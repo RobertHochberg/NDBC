@@ -14,17 +14,17 @@ import java.util.HashMap;
 public class AdminTasks extends Thread{
 	static long startTime = 0;
 	static int timeLeft = 0;
-	
+
 	// Hashmap to hold all future price values
 	HashMap<Integer, HashMap<String, Integer>> prices;
-	
+
 	@Override
 	public void run() {
 		int UPDATE_DELAY = 5; // in seconds
 		int round = 0;
 		long lastUpdateTime = -1;
 		getHistoricalValues(); // fill the prices hashmap
-		
+
 		while(true){
 			// Check for new transactions and update if necessary
 			System.out.println("Checking Snapshot");
@@ -274,7 +274,7 @@ public class AdminTasks extends Thread{
 		}
 
 	}
-	
+
 	/*
 	 * Sends hints to managers of stocks by placing messages
 	 * into the secretMessages table
@@ -296,7 +296,7 @@ public class AdminTasks extends Thread{
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
-		
+
 		// First find the current round, according to the database
 		int currentRound = 0;
 		try (Statement statement = connection.createStatement()) {
@@ -309,26 +309,26 @@ public class AdminTasks extends Thread{
 		}
 
 		// Set them as the new prices
-		String updatePrices  = "INSERT INTO secretMessages(recipient, body) VALUES(?, ?)";
-		try (PreparedStatement statement = connection.prepareStatement(updatePrices)) {
-			for(String m : Constants.manages.keySet()){
+		for(String m : Constants.manages.keySet()){
+			String updatePrices  = "INSERT INTO secretMessages(recipient, " + m + ") VALUES(?, ?)";
+			try (PreparedStatement statement = connection.prepareStatement(updatePrices)) {
 				String msg = "";
 				for(String s : Constants.manages.get(m)){
 					HashMap<String, Integer> n0 = prices.get(currentRound);
 					HashMap<String, Integer> n1 = prices.get(currentRound + 1);
 					HashMap<String, Integer> n5 = prices.get(currentRound + 5);
 					HashMap<String, Integer> n20 = prices.get(currentRound + 20);
-					msg += String.format("%s:%2f-%2f-%2f ",
-						s, 100*((double)n1.get(s))/n0.get(s)-1, 100*((double)n5.get(s))/n0.get(s)-1, 
-						100*((double)n20.get(s))/n0.get(s)-1);
+					msg += String.format("%s:%.2f-%.2f-%.2f ",
+							s, 100*((double)n1.get(s))/n0.get(s)-1, 100*((double)n5.get(s))/n0.get(s)-1, 
+							100*((double)n20.get(s))/n0.get(s)-1);
 				}
 				statement.setString(1, m);
 				statement.setString(2, msg);
 				statement.addBatch();
+				int[] x = statement.executeBatch();
+			} catch (SQLException e) {
+				e.printStackTrace();
 			}
-			int[] x = statement.executeBatch();
-		} catch (SQLException e) {
-			e.printStackTrace();
 		}
 	}
 
@@ -493,10 +493,10 @@ public class AdminTasks extends Thread{
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
-		
+
 	}
-	
-	
+
+
 	/*
 	 * Designed to be used once, to populate users with 
 	 * initial values.UserData
@@ -606,7 +606,7 @@ public class AdminTasks extends Thread{
 			e.printStackTrace();
 		}
 	}
-	
+
 	/*
 	 * Specific granting of privileges to our users
 	 * 
@@ -631,7 +631,7 @@ public class AdminTasks extends Thread{
 
 		// Take away all the privileges
 		/*
-		String revoke = "REVOKE INSERT ON ndbc.messages FROM ?@'%'";
+		String revoke = "REVOKE SELECT ON ndbc.secretMessages FROM ?@'%'";
 		try (PreparedStatement statement = connection.prepareStatement(revoke)) {
 			for(String s : Constants.users){
 				statement.setString(1, s);
@@ -641,7 +641,7 @@ public class AdminTasks extends Thread{
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
-		*/
+		 */
 
 		// Give the appropriate privileges back
 		String grant  = "GRANT SELECT, INSERT ON ndbc.messages TO ?@'%'";
@@ -651,11 +651,11 @@ public class AdminTasks extends Thread{
 				statement.addBatch();
 			}
 			int[] x = statement.executeBatch();
-			System.out.println("Privileges: " + Arrays.toString(x));
+			System.out.println("messag Privileges: " + Arrays.toString(x));
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
-		
+
 		grant  = "GRANT INSERT ON ndbc.transactions TO ?@'%'";
 		try (PreparedStatement statement = connection.prepareStatement(grant)) {
 			for(String s : Constants.users){
@@ -663,11 +663,11 @@ public class AdminTasks extends Thread{
 				statement.addBatch();
 			}
 			int[] x = statement.executeBatch();
-			System.out.println("Privileges: " + Arrays.toString(x));
+			System.out.println("transx Privileges: " + Arrays.toString(x));
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
-		
+
 		grant  = "GRANT SELECT ON ndbc.stocks TO ?@'%'";
 		try (PreparedStatement statement = connection.prepareStatement(grant)) {
 			for(String s : Constants.users){
@@ -675,11 +675,11 @@ public class AdminTasks extends Thread{
 				statement.addBatch();
 			}
 			int[] x = statement.executeBatch();
-			System.out.println("Privileges: " + Arrays.toString(x));
+			System.out.println("stocks Privileges: " + Arrays.toString(x));
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
-		
+
 		grant  = "GRANT SELECT ON ndbc.users TO ?@'%'";
 		try (PreparedStatement statement = connection.prepareStatement(grant)) {
 			for(String s : Constants.users){
@@ -687,23 +687,34 @@ public class AdminTasks extends Thread{
 				statement.addBatch();
 			}
 			int[] x = statement.executeBatch();
-			System.out.println("Privileges: " + Arrays.toString(x));
+			System.out.println("users  Privileges: " + Arrays.toString(x));
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
-		
-		grant  = "GRANT SELECT ON ndbc.mySecretMessages TO ?@'%'";
+
+		grant  = "GRANT SELECT ON ndbc.owns TO ?@'%'";
 		try (PreparedStatement statement = connection.prepareStatement(grant)) {
 			for(String s : Constants.users){
 				statement.setString(1, s);
 				statement.addBatch();
 			}
 			int[] x = statement.executeBatch();
-			System.out.println("Privileges: " + Arrays.toString(x));
+			System.out.println("owns   Privileges: " + Arrays.toString(x));
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
-		
+
+		// Grant permission to their own column in the secretMessages table
+		try (Statement statement = connection.createStatement()) {
+			for(String s : Constants.users){
+				statement.execute("GRANT SELECT (" + s + 
+						", messageId, recipient) ON ndbc.secretMessages TO '" + 
+						s + "'@'%';");
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+
 		grant  = "GRANT ALL PRIVILEGES ON play.* TO ?@'%'";
 		try (PreparedStatement statement = connection.prepareStatement(grant)) {
 			for(String s : Constants.users){
@@ -711,7 +722,7 @@ public class AdminTasks extends Thread{
 				statement.addBatch();
 			}
 			int[] x = statement.executeBatch();
-			System.out.println("Privileges: " + Arrays.toString(x));
+			System.out.println("play   Privileges: " + Arrays.toString(x));
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
@@ -725,6 +736,6 @@ public class AdminTasks extends Thread{
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
-		
+
 	}
 }

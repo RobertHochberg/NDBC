@@ -108,6 +108,7 @@ public class MessagePanel extends JPanel implements ActionListener{
 			e.printStackTrace();
 		}
 
+		// Update public messages
 		try (Statement statement = connection.createStatement()) {
 			String queryString = "SELECT messageId, timestamp, body, sender " +
 					"FROM messages WHERE messageId > " + mostRecentMessageId + ";";
@@ -123,8 +124,9 @@ public class MessagePanel extends JPanel implements ActionListener{
 			e.printStackTrace();
 		}
 
+		// Retrieve my most recent secret message
 		try (Statement statement = connection.createStatement()) {
-			String queryString = "SELECT recipient, body FROM secretMessages " +
+			String queryString = "SELECT recipient, " + UserData.USER + " FROM secretMessages " +
 					"WHERE recipient='" + UserData.USER + "' AND " +
 					"messageId = (SELECT MAX(messageId) from secretMessages where recipient = '" + UserData.USER + "');";
 			ResultSet resultSet = statement.executeQuery(queryString);
