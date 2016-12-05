@@ -131,8 +131,7 @@ public class AdminTasks extends Thread{
 		// Read all the recent transactions
 		ArrayList<Transaction> transactions = new ArrayList<>();
 		try (Statement statement = connection.createStatement()) {
-			ResultSet resultSet = statement.executeQuery("SELECT (transactionId, timestamp, " +
-					"salePrice, quantity, buySell, symbol, username) " +
+			ResultSet resultSet = statement.executeQuery("SELECT * " +
 					"FROM transactions WHERE transactionId > " + lastSnapshot + ";");
 			while(resultSet.next()){
 				if(resultSet.getString(7).equals("loser"))

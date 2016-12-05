@@ -37,7 +37,7 @@ public class GameTimer extends Thread {
 				state = WAIT;
 				portal.setOrderable(true);
 			}
-			
+
 			// Check to see if there are orders to do
 			if(timeLeft < 1 && state == WAIT){
 				state = ORDER;
@@ -45,9 +45,15 @@ public class GameTimer extends Thread {
 				// Create transactions
 				makeBuys();
 				makeSells();
-				 // Process transactions
+				// Wait two seconds for the admin task to process the sales
+				try {
+					Thread.sleep(2000);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+				// Process transactions
 				portal.updateHoldingsPanel();
-				
+
 				startTime = System.currentTimeMillis();
 				state = PULL;
 			}
@@ -97,7 +103,7 @@ public class GameTimer extends Thread {
 			}
 			int[] rowsChanged = statement.executeBatch();
 			for(int i : rowsChanged) if(i == 0) System.out.println("Error Occurred in making buys.");
-			
+
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
