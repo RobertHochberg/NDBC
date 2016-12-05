@@ -11,7 +11,6 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.sql.Timestamp;
 import java.util.Arrays;
 import java.util.Random;
 
@@ -32,7 +31,7 @@ import com.google.api.client.repackaged.org.apache.commons.codec.binary.Base64;
 public class DTeamPanel extends JPanel {
 	private boolean boolOfPower = false;
 	private Portal portal;
-	private String timestampOfPower;
+	JLabel indicatorOfPower;
 	
 	
 	String instanceConnectionName = "mineral-brand-148217:us-central1:first";
@@ -184,20 +183,25 @@ public class DTeamPanel extends JPanel {
 			Basics basics = new Basics(this);
 			JPanel botOfPower = new JPanel();
 			JButton buttonOfPower = new JButton("Test");
+			indicatorOfPower = new JLabel();
 			buttonOfPower.addActionListener(new ActionListener() {
 
 				@Override
 				public void actionPerformed(ActionEvent e) {
 					if(boolOfPower){
 						basics.kill();
-						timestampOfPower = null;
+						indicatorOfPower.setText("");
 					}else{
 						basics.start();
+						indicatorOfPower.setText("Bot of Power!");
 					}
+					
+					boolOfPower = !boolOfPower;
 
 				}
 			});
 			botOfPower.add(buttonOfPower);
+			botOfPower.add(indicatorOfPower);
 			botOfPower.setBackground(this.getBackground());
 			this.add(botOfPower);
 		} catch (SQLException e) {
@@ -214,19 +218,14 @@ public class DTeamPanel extends JPanel {
 			cipher.init(Cipher.ENCRYPT_MODE, key);
 			return Base64.encodeBase64String(cipher.doFinal(message.getBytes()));
 		} catch (NoSuchAlgorithmException e1) {
-			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		} catch (NoSuchPaddingException e1) {
-			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		} catch (InvalidKeyException e1) {
-			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		} catch (IllegalBlockSizeException e1) {
-			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		} catch (BadPaddingException e1) {
-			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
 		return null;
@@ -241,19 +240,14 @@ public class DTeamPanel extends JPanel {
 			cipher.init(Cipher.DECRYPT_MODE, key);
 			return new String(cipher.doFinal(Base64.decodeBase64(message)));
 		} catch (NoSuchAlgorithmException e1) {
-			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		} catch (NoSuchPaddingException e1) {
-			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		} catch (InvalidKeyException e1) {
-			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		} catch (IllegalBlockSizeException e1) {
-			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		} catch (BadPaddingException e1) {
-			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
 
@@ -279,18 +273,24 @@ public class DTeamPanel extends JPanel {
 			String[] stocks;
 			HoldingPanel stock;
 			Float[] future;
+			String stockMessage = "";
 			while(resultSet.next()){
 				stocks = resultSet.getString(1).split(" ");
 				for(String s : stocks){
 					stock = portal.stockOrders.get(s.split(":")[0]);
 					future = (Float[])Arrays.stream(s.split(":")[1].split("-")).map((x) -> Float.parseFloat(x)).toArray(size -> new Float[size]);
 					
-					if((future[1] > 100 && future[1] > future[0]) || (future[2] > 100 && future[2] > future[0]))
+					if((future[1] > 100 && future[1] > future[0]) || (future[2] > 100 && future[2] > future[0])){
 						stock.setDesiredNumShares(100);
-					else if(future[1] < future[0] && future[2] < future[0])
+						stockMessage += s.split(":")[0] + " at 100; ";
+					}else if(future[1] < future[0] && future[2] < future[0]){
 						stock.setDesiredNumShares(0);
+					stockMessage += s.split(":")[0] + " at 0; ";
+					}
 				}
+				stockMessage += "\n";
 			}
+			indicatorOfPower.setText(stockMessage);
 			
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -319,18 +319,34 @@ public class DTeamPanel extends JPanel {
 
 	private void postSecretMessage(Message secret, Connection connection) {
 		try (Statement statement = connection.createStatement()) {
-			System.out.println(secret.sender);
 			String queryString = "INSERT INTO d1(id, user, message) VALUES('";
 			queryString += secret.messageId;
 			queryString += "', '";
-			queryString += secret.sender;
-			queryString += "', '";
 			queryString += secret.body;
+			queryString += "', '";
+			queryString += secret.sender;
 			queryString += "');";
 			statement.execute(queryString);
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
 		
+	}
+	
+	void killD1(){
+		Connection connection = null;
+		try {
+			connection = DriverManager.getConnection(jdbcUrl, username, password);
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		
+		try(Statement statement = connection.createStatement()){
+			String queryString = "delete from d1 where user = '" + username + "';";
+			statement.execute(queryString);
+			
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
 	}
 }
