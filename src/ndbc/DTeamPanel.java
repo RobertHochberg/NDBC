@@ -30,7 +30,6 @@ import javax.swing.JTextField;
 import com.google.api.client.repackaged.org.apache.commons.codec.binary.Base64;
 
 public class DTeamPanel extends JPanel {
-
 	private boolean boolOfPower = false;
 	private Portal portal;
 	private String timestampOfPower;

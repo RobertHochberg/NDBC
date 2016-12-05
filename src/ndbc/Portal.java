@@ -129,7 +129,7 @@ public class Portal extends JFrame{
 		//AdminTasks.putHistoricalValues();
 		UserData.populateHoldingsFromDatabase();
 		startGame();
-		startAdminTasks();
+		//startAdminTasks();
 	}
 
 	/*

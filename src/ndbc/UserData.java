@@ -9,7 +9,7 @@ import java.util.HashMap;
 
 public class UserData {
 	static String USER = "root";
-	static String PW   = "ndbcAdminnow";
+	static String PW   = "";
 	//static String USER = "jwilson";
 	//static String PW   = "meteor";
 	

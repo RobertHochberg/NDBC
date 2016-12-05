@@ -128,29 +128,15 @@ public class AdminTasks extends Thread{
 			e.printStackTrace();
 		}
 
-		// Get the stock holdings of all users
-		/*
-		try (Statement statement = connection.createStatement()) {
-			ResultSet resultSet = statement.executeQuery("SELECT * FROM owns;" + lastSnapshot + ";");
-			HashMap<String, HashMap<String, Integer>> owns = new HashMap<>();
-			HashMap<String, HashMap<String, Integer>> toUpdate = new HashMap<>();
-			while(resultSet.next()){
-				String user = resultSet.getString(1);
-				if(!owns.containsKey(user)){
-					owns.put(user, new HashMap<String, Integer>());
-					toUpdate.put(user, new HashMap<String, Integer>());
-				}
-				owns.get(user).put(resultSet.getString(2), resultSet.getInt(3));
-			}
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}*/
-
 		// Read all the recent transactions
 		ArrayList<Transaction> transactions = new ArrayList<>();
 		try (Statement statement = connection.createStatement()) {
-			ResultSet resultSet = statement.executeQuery("SELECT * FROM transactions WHERE transactionId > " + lastSnapshot + ";");
+			ResultSet resultSet = statement.executeQuery("SELECT (transactionId, timestamp, " +
+					"salePrice, quantity, buySell, symbol, username) " +
+					"FROM transactions WHERE transactionId > " + lastSnapshot + ";");
 			while(resultSet.next()){
+				if(resultSet.getString(7).equals("loser"))
+					continue;
 				transactions.add(new Transaction(resultSet.getInt(1), resultSet.getDate(2),
 						resultSet.getInt(3), resultSet.getInt(4), resultSet.getString(5),
 						resultSet.getString(6), resultSet.getString(7)));		

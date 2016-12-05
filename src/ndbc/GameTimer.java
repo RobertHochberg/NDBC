@@ -46,7 +46,6 @@ public class GameTimer extends Thread {
 				makeBuys();
 				makeSells();
 				 // Process transactions
-				AdminTasks.updateSnapshot();
 				portal.updateHoldingsPanel();
 				
 				startTime = System.currentTimeMillis();
