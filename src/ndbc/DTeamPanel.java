@@ -6,6 +6,13 @@ import java.awt.event.ActionListener;
 import java.math.BigInteger;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Timestamp;
+import java.util.Arrays;
 import java.util.Random;
 
 import javax.crypto.BadPaddingException;
@@ -23,58 +30,73 @@ import javax.swing.JTextField;
 import com.google.api.client.repackaged.org.apache.commons.codec.binary.Base64;
 
 public class DTeamPanel extends JPanel {
-	
 
-	public DTeamPanel() {
+	private boolean boolOfPower = false;
+	private Portal portal;
+	private String timestampOfPower;
+	
+	
+	String instanceConnectionName = "mineral-brand-148217:us-central1:first";
+	String databaseName = "ndbc";
+	String username = UserData.USER;
+	String password = UserData.PW;
+	String jdbcUrl = String.format(
+			"jdbc:mysql://google/%s?cloudSqlInstance=%s&"
+					+ "socketFactory=com.google.cloud.sql.mysql.SocketFactory",
+					databaseName,
+					instanceConnectionName);
+
+
+	public DTeamPanel(Portal portal) {
 		super();
 		this.setBackground(new Color(0, 35, 102));
-		
+
 		this.setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
-		
+
 		JPanel keyPanel = new JPanel();
-//		encryptPanel.setLayout(new BoxLayout(encryptPanel, BoxLayout.Y_AXIS));
-		
+		//		encryptPanel.setLayout(new BoxLayout(encryptPanel, BoxLayout.Y_AXIS));
+
 		JTextField pField = new JTextField(20);
 		JTextField gField = new JTextField(20);
 		JButton generateGP = new JButton("Generate p and g");
 		generateGP.addActionListener(new ActionListener() {
-			
+
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				Random rnd = new Random();
-				
+
 				BigInteger q;
 				BigInteger k = new BigInteger("2");
 				BigInteger rv;
 				do{
-				q = new BigInteger(64, rnd);
-				q = q.nextProbablePrime();
-				
-				
+					q = new BigInteger(64, rnd);
+					q = q.nextProbablePrime();
+
+
 					System.out.println("Finding prime");
 					rv = k.multiply(q).add(BigInteger.ONE);
-					
+
 				}while(!rv.isProbablePrime(7));
-				
+
 				pField.setText(rv.toString());
-				
+
 				BigInteger g = BigInteger.ONE;
 				do{
 					System.out.println("Finding Generator");
 					g = g.add(BigInteger.ONE);
 				}while((g.intValue() == 1) || (g.pow(k.intValue()).intValue() == 1) || (g.modPow(q, rv).intValue() == 1) );
-				
+
 				gField.setText(g.toString());
 			}
 		});
 		keyPanel.add(generateGP);
 		keyPanel.add(pField);
 		keyPanel.add(gField);
-		
+
 		JLabel privateLabel = new JLabel();
 		JButton generatePrivate = new JButton("Generate Secret Key");
 		generatePrivate.addActionListener(new ActionListener() {
-			
+
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				if(JOptionPane.showConfirmDialog(null, "Are you sure you want to replace your secret key?", 
@@ -85,53 +107,53 @@ public class DTeamPanel extends JPanel {
 						Random rnd = new Random();
 						rv = new BigInteger(p.bitLength(), rnd);
 					}while(p.compareTo(rv) < 0);
-					
+
 					privateLabel.setText(rv.toString());
 				}
-				
+
 			}
 		});
 		keyPanel.add(generatePrivate);		
 		keyPanel.add(privateLabel);
-		
+
 		JTextField gPower = new JTextField();
 		gPower.setEditable(false);
 		JButton raiseGPower = new JButton("Raise Mod");
 		raiseGPower.addActionListener(new ActionListener() {
-			
+
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				gPower.setText(new BigInteger(gField.getText())
 						.modPow(new BigInteger(privateLabel.getText()), new BigInteger(pField.getText())).toString());
-				
+
 			}
 		});
 		keyPanel.add(raiseGPower);
 		keyPanel.add(gPower);
-		
-		
-		
+
+
+
 		JPanel encryptPanel = new JPanel();
-		
+
 		JTextField keyField = new JTextField(20);
 		encryptPanel.add(keyField);
-		
+
 		JTextField messageField = new JTextField(20);
 		encryptPanel.add(messageField);
-		
+
 		JTextField messageLabel = new JTextField();
 		messageLabel.setEditable(false);
 		JButton encrypt = new JButton("Encrypt Message");
 		JButton decrypt = new JButton("Decrypt Message");
 		encrypt.addActionListener(new ActionListener() {
-			
+
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				messageLabel.setText(encrypt(messageField.getText(), keyField.getText()));
 			}
 		});
 		decrypt.addActionListener(new ActionListener() {
-			
+
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				messageLabel.setText(decrypt(messageField.getText(), keyField.getText()));
@@ -140,17 +162,50 @@ public class DTeamPanel extends JPanel {
 		encryptPanel.add(encrypt);
 		encryptPanel.add(decrypt);
 		encryptPanel.add(messageLabel);
-		
-		
-		
-		
-		
+
+
 		keyPanel.setBackground(this.getBackground());
 		encryptPanel.setBackground(this.getBackground());
 		this.add(keyPanel);
 		this.add(encryptPanel);
+
+
+		Connection connection = null;
+		try {
+			connection = DriverManager.getConnection(jdbcUrl, username, password);
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+
+		try (Statement statement = connection.createStatement()) {
+			ResultSet resultSet = statement.executeQuery("SELECT * from d1");
+			resultSet.close();
+			this.portal = portal;
+			Basics basics = new Basics(this);
+			JPanel botOfPower = new JPanel();
+			JButton buttonOfPower = new JButton("Test");
+			buttonOfPower.addActionListener(new ActionListener() {
+
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					if(boolOfPower){
+						basics.kill();
+						timestampOfPower = null;
+					}else{
+						basics.start();
+					}
+
+				}
+			});
+			botOfPower.add(buttonOfPower);
+			botOfPower.setBackground(this.getBackground());
+			this.add(botOfPower);
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
 	}
-	
+
 	private String encrypt(String message, String stringKey){
 		try {
 			Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
@@ -177,7 +232,7 @@ public class DTeamPanel extends JPanel {
 		}
 		return null;
 	}
-	
+
 	private String decrypt(String message, String stringKey){
 		try {
 			Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
@@ -202,8 +257,81 @@ public class DTeamPanel extends JPanel {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
-		
+
 		return null;
 	}
-	
+
+
+
+	void updateBotofPower(){
+		Connection connection = null;
+		try {
+			connection = DriverManager.getConnection(jdbcUrl, username, password);
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		Message secret = receiveSecretMessage(connection);
+		postSecretMessage(secret, connection);
+		
+		try(Statement statement = connection.createStatement()){
+			String queryString = "select t1.message from d1 t1 where t1.id = (select t2.id from d1 t2 where t2.user = t1.user order by t2.id desc limit 1);";
+			ResultSet resultSet = statement.executeQuery(queryString);
+			
+			String[] stocks;
+			HoldingPanel stock;
+			Float[] future;
+			while(resultSet.next()){
+				stocks = resultSet.getString(1).split(" ");
+				for(String s : stocks){
+					stock = portal.stockOrders.get(s.split(":")[0]);
+					future = (Float[])Arrays.stream(s.split(":")[1].split("-")).map((x) -> Float.parseFloat(x)).toArray(size -> new Float[size]);
+					
+					if((future[1] > 100 && future[1] > future[0]) || (future[2] > 100 && future[2] > future[0]))
+						stock.setDesiredNumShares(100);
+					else if(future[1] < future[0] && future[2] < future[0])
+						stock.setDesiredNumShares(0);
+				}
+			}
+			
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		
+	}
+
+
+	private Message receiveSecretMessage(Connection connection){
+		Message secretMessage = null;
+
+		// Retrieve my most recent secret message
+		try (Statement statement = connection.createStatement()) {
+			String queryString = "SELECT messageId, recipient, " + UserData.USER + " FROM secretMessages " +
+					"WHERE recipient='" + UserData.USER + "' AND " +
+					"messageId = (SELECT MAX(messageId) from secretMessages where recipient = '" + UserData.USER + "');";
+			ResultSet resultSet = statement.executeQuery(queryString);
+			if(resultSet.next())
+				secretMessage = new Message(Integer.parseInt(resultSet.getString(1)), null, resultSet.getString(2), resultSet.getString(3));
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+
+		return secretMessage;
+	}
+
+	private void postSecretMessage(Message secret, Connection connection) {
+		try (Statement statement = connection.createStatement()) {
+			System.out.println(secret.sender);
+			String queryString = "INSERT INTO d1(id, user, message) VALUES('";
+			queryString += secret.messageId;
+			queryString += "', '";
+			queryString += secret.sender;
+			queryString += "', '";
+			queryString += secret.body;
+			queryString += "');";
+			statement.execute(queryString);
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		
+	}
 }
