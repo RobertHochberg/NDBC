@@ -379,6 +379,7 @@ public class AdminTasks extends Thread{
 	 * Intended to be run only whenever a new game is starting
 	 */
 	static void putHistoricalValues(){
+		int SIZE_OF_HISTORY = 10000;
 		System.out.println("Start History");
 		String instanceConnectionName = "mineral-brand-148217:us-central1:first";
 		String databaseName = "ndbc";
@@ -406,8 +407,8 @@ public class AdminTasks extends Thread{
 		HashMap<String, Double[]> DPrices = new HashMap<>();
 		HashMap<String, Integer[]> IPrices = new HashMap<>();
 		for(String s : Constants.stocks){
-			DPrices.put(s, new Double[1000]); 
-			IPrices.put(s, new Integer[1000]); 
+			DPrices.put(s, new Double[SIZE_OF_HISTORY]); 
+			IPrices.put(s, new Integer[SIZE_OF_HISTORY]); 
 			DPrices.get(s)[0] = 40.0; // Stock all start at $40
 			IPrices.get(s)[0] = 4000; // Stock all start at $40
 		}
@@ -421,7 +422,7 @@ public class AdminTasks extends Thread{
 			//System.out.println("");
 		}
 		// Now the next 993 days.
-		for(int i = 7; i <= 999; i++){
+		for(int i = 7; i <= SIZE_OF_HISTORY-1; i++){
 			for(String stock : Constants.stocks){
 				// Update the prices
 				Double[] p = DPrices.get(stock);
@@ -440,7 +441,7 @@ public class AdminTasks extends Thread{
 		int round = 0;
 		try (PreparedStatement statement = connection.prepareStatement(insert)) {
 			// Create the insert line
-			for(int i = 0; i <= 999; i++){
+			for(int i = 0; i <= SIZE_OF_HISTORY-1; i++){
 				System.out.print(i + ": ");
 				for(String stock : Constants.stocks){
 					statement.setInt(1, round);

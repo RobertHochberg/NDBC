@@ -126,9 +126,10 @@ public class Portal extends JFrame{
 		messagePanel.update();
 
 		//AdminTasks.managePrivileges();
+		AdminTasks.putHistoricalValues();
 		UserData.populateHoldingsFromDatabase();
 		startGame();
-		//startAdminTasks();
+		startAdminTasks();
 	}
 
 	/*

@@ -8,10 +8,10 @@ import java.sql.Statement;
 import java.util.HashMap;
 
 public class UserData {
-	//static String USER = "root";
-	//static String PW   = "ndbcadmin)(";
-	static String USER = "jwilson";
-	static String PW   = "meteor";
+	static String USER = "root";
+	static String PW   = "ndbcAdminnow";
+	//static String USER = "jwilson";
+	//static String PW   = "meteor";
 	
 
 	static HashMap<String, Integer> holdings; 	// maps stock symbol to #shares
