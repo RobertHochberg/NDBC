@@ -12,6 +12,9 @@ public class DStack extends ArrayList<Float> {
 	}
 	
 	public void addMessage(float one, float five, float twenty){
+		if(get(0) != one)
+			pop();
+		
 		set(0, one);
 		set(4, five);
 		set(19, twenty);

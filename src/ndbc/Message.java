@@ -18,5 +18,10 @@ public class Message {
 		this.sender = sender;
 	}
 	
+	public boolean equals(Message obj) {
+		// TODO Auto-generated method stub
+		return (messageId == obj.messageId) && (timestamp.equals(obj.timestamp) && (body.equals(obj.body) && sender.equals(obj.sender)));
+	}
+	
 	
 }

@@ -37,6 +37,7 @@ public class DTeamPanel extends JPanel {
 	private JTextField keyField;
 	private JLabel indicatorOfPower;
 	private HashMap<String, DStack> prices;
+	Message oldSecretMessage = new Message(0,null,null,null);
 	
 	
 	String instanceConnectionName = "mineral-brand-148217:us-central1:first";
@@ -284,8 +285,7 @@ public class DTeamPanel extends JPanel {
 			for(Entry<String, DStack> st : prices.entrySet())
 				System.out.println(st.getKey() + ":" + Arrays.toString(st.getValue().toArray()));
 			
-			for(DStack st : prices.values())
-				st.pop();
+			
 			
 			String[] stocks;
 			HoldingPanel stock;
@@ -347,6 +347,12 @@ public class DTeamPanel extends JPanel {
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
+		
+//		if (!secretMessage.equals(oldSecretMessage))
+//			for(DStack st : prices.values())
+//				st.pop();
+		
+		oldSecretMessage = secretMessage;
 
 		return secretMessage;
 	}
