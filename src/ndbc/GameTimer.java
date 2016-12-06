@@ -3,6 +3,7 @@ package ndbc;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.TimerTask;
@@ -33,6 +34,7 @@ public class GameTimer extends Thread {
 			// If State == PULL, update from the database
 			if(timeLeft > 10 && state == PULL){
 				UserData.populateHoldingsFromDatabase();
+				portal.getNetWorths();
 				portal.updateHoldingsPanel();
 				state = WAIT;
 				portal.setOrderable(true);

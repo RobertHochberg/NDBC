@@ -11,7 +11,7 @@ public class UserData {
 	static String USER = "root";
 	static String PW   = "";
 	//static String USER = "jwilson";
-	//static String PW   = "meteor";
+	//static String PW   = "";
 	
 
 	static HashMap<String, Integer> holdings; 	// maps stock symbol to #shares
