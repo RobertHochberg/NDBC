@@ -12,14 +12,14 @@ public class Basics extends Thread {
 	
 	@Override
 	public void run() {
-		startTime = System.currentTimeMillis() + 5000;
+		startTime = System.currentTimeMillis();
 		int timeleft;
 		live = true;
 		while(live){
 			
 			timeleft = (int)((System.currentTimeMillis() - startTime) / 1000);
 			
-			if(timeleft > 10){
+			if(timeleft > 5){
 				panel.updateBotofPower();
 				startTime = System.currentTimeMillis();
 			}
@@ -35,6 +35,7 @@ public class Basics extends Thread {
 	
 	public void kill(){
 		live = false;
+		panel.killD1();
 	}
 
 }
