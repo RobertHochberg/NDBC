@@ -3,6 +3,10 @@ package ndbc;
 import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
@@ -14,17 +18,33 @@ import javax.swing.JTextArea;
 import java.awt.Font;
 
 public class UTeamPanel extends JPanel {
+	Portal portal;
+	
+	//////Database Connection Info/////////
+	String instanceConnectionName = "mineral-brand-148217:us-central1:first";
+	String databaseName = "ndbc";
+	String username = UserData.USER;
+	String password = UserData.PW;
+	String jdbcUrl = String.format(
+			"jdbc:mysql://google/%s?cloudSqlInstance=%s&"
+					+ "socketFactory=com.google.cloud.sql.mysql.SocketFactory",
+					databaseName,
+					instanceConnectionName);
+
+	Connection connection = null;
 
 	public UTeamPanel(Portal portal) {
 	      super();
+	      this.portal = portal;
 	      this.setBackground(Color.WHITE);
 	      this.setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 	      AutoTrader autoTrader = new AutoTrader(portal);
 	      
 	      JButton logBtn = new JButton("PrintLog");
 	      
+	      JButton shareSecrets = new JButton("Share stocks");
 	      
-
+	      
 
 	      JLabel lblAutoTrade = new JLabel("AutoTrade");
 	      JRadioButton runAutoTrade = new JRadioButton("On");
@@ -53,6 +73,9 @@ public class UTeamPanel extends JPanel {
 	            if(e.getSource() == logBtn){
 	            	autoTrader.logPredictionsAIN();
 	            	//System.out.println(autoTrader.log);
+	            }
+	            if(e.getSource() == shareSecrets){
+	            	shareSecrets();
 	            }
 
 
@@ -114,5 +137,33 @@ public class UTeamPanel extends JPanel {
 		
 	}
 	
+	public void shareSecrets(){
+		try {
+			connection = DriverManager.getConnection(jdbcUrl, username, password);
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+
+		String insert = "INSERT INTO u1 (username, secretmessage) " +
+				"VALUES(?, ?, ?, ?, ?)";
+		try (PreparedStatement statement = connection.prepareStatement(insert)) {
+
+				statement.setString(1, UserData.USER);
+				statement.setString(2, getNewSecretMessage());
+				statement.addBatch();
+				statement.execute();
+				
+			}
+			catch (Exception e) {
+				// TODO: handle exception
+			}
+
+		
+	}
+		public String getNewSecretMessage(){
+			portal.messagePanel.update();
+			String message = portal.messagePanel.secretMessage.body;
+			return message;
+		}
 
 }

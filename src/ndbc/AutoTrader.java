@@ -12,6 +12,7 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.jar.JarInputStream;
 
 import javax.print.attribute.standard.JobMessageFromOperator;
 import javax.swing.JOptionPane;
@@ -43,6 +44,9 @@ public class AutoTrader extends Thread {
 
 	Connection connection = null;
 
+	volatile boolean wait;
+	
+	double oldcash;
 
 
 	public static void main(String[] args) {
@@ -51,44 +55,57 @@ public class AutoTrader extends Thread {
 
 	}
 
-	@Override
-	public void run(){
+	//@Override
+	synchronized public void run(){
 
 		System.out.println("RUN");
 		String password = getPassword();
 		if(verifyPassword(password) == false)
 			return;
+		wait = false;
+		boolean print = true;
+
 		//String[] stocks = getStocksString();
 
 		messagePanel.update();
-		String secretMessage = messagePanel.secretMessage.body;
+		String secretMessage = getNewSecretMessage();
 		populateMyStocks(secretMessage);
-		DebugWindow d = new DebugWindow(this);
+		int time = portal.gameTimer.timeLeft;
+		//DebugWindow d = new DebugWindow(this);
 
 		while(!STOP){
+			time = portal.gameTimer.timeLeft;
+			/*
 			if(portal.gameTimer.timeLeft % 4 == 0){
-				for(StockandPred s : myStocks)
-					s.updatePrices();
+				//for(StockandPred s : myStocks)
+					//s.updatePrices();
 				portal.messagePanel.update();
 
-
+				System.out.println("PPP");
 				portal.messagePanel.myMessageArea.setText("AQU = " + myStocks.get(0).currentPrice + " \nnext: " + myStocks.get(0).nextPrice +"\nthird: "+
 						myStocks.get(0).thirdPrice);
 				portal.messagePanel.update();
 
+				System.out.println("TURN: " + turn + " last: " + lastTurn);
 
 			}
+			 */
 			//portal.updateStatusPanel();
+			//System.out.println(String.format("UPDATING %d %d %b %d", lastTurn, turn, wait, portal.gameTimer.timeLeft));
+			if(!wait){
 
-			if(portal.gameTimer != null && portal.gameTimer.timeLeft <= 11 && turn != lastTurn){
+				wait = true;
 				String message = getNewSecretMessage();
 				if(!message.contentEquals(oldSecretMessage)){
 					updateStocks(message);
 					oldSecretMessage = message;
 					UserData.populateHoldingsFromDatabase();
-					if(turn>=4)
+					turn+=1;
+					if(turn>=4){
 						makeTransactions();
-
+						printStats();
+						oldcash = UserData.currentCash;
+					}
 
 					/*
                 	portal.messagePanel.myMessageArea.setText("AQU = " + myStocks.get(0).currentPrice + " next: " + myStocks.get(0).nextPrice +"\n"+
@@ -97,24 +114,49 @@ public class AutoTrader extends Thread {
                 	portal.repaint();
 					 */
 
-					portal.updateHoldingsPanel();
-
+					//portal.updateHoldingsPanel();
+					/*
 
 					int count = 0;
 					for(StockandPred stock : myStocks){
 						//d.repaint(stock, count);
 						count += 20;
 					}
+					 */
 				}
-				if(portal.gameTimer.timeLeft <= 0)
-					lastTurn = turn;
-				turn +=1;
+
+			}else{
+				//	if(print == true){
+				//	System.out.print("PRINT ");
+				//}
+				if(time >=12 && time<18 && wait){
+					wait = false;
+					print = true;
+				}
+				if(time <= 2 || time >18){
+					wait = true;
+
+				}
 			}
 		}
 		System.out.println("Stop");
 		this.interrupt();
 
 
+	}
+	
+	public void printStats(){
+		String AQN, AIN, TAN;
+		double cashChange = UserData.currentCash - oldcash;  
+		System.out.println("Cash Change: " + cashChange);
+		System.out.println(String.format("%s : %f %f %f", myStocks.get(0).name,myStocks.get(0).currentPrice ,myStocks.get(0).nextPrice,myStocks.get(0).thirdPrice));
+		System.out.println(String.format("%s : %f %f %f", myStocks.get(1).name,myStocks.get(1).currentPrice ,myStocks.get(1).nextPrice,myStocks.get(1).thirdPrice));
+		System.out.println(String.format("%s : %f %f %f", myStocks.get(2).name,myStocks.get(2).currentPrice ,myStocks.get(2).nextPrice,myStocks.get(2).thirdPrice));
+		System.out.println("AQN OWN: " + UserData.holdings.get("AQU"));
+		System.out.println("AIN OWN: " + UserData.holdings.get("AIN"));
+		System.out.println("TAN OWN: " + UserData.holdings.get("TAN"));
+		
+		
 	}
 
 
@@ -173,7 +215,8 @@ public class AutoTrader extends Thread {
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
-
+		
+		
 		// Update public messages
 		/*
       try (Statement statement = connection.createStatement()) {
@@ -186,6 +229,9 @@ public class AutoTrader extends Thread {
       } catch (SQLException e) {
          e.printStackTrace();
       }
+
+		 String mypw = JOptionPane.showInputDialog("Enter the AES Encryption key");
+		 
 		 */
 
 		if(!userPassword.contentEquals(dbPassword) || userPassword == null)
@@ -198,12 +244,13 @@ public class AutoTrader extends Thread {
 		return false;
 
 	}
-
+	//can only be called once per turn or errors occur
 	public void updateStocks(String message){
 		ArrayList<String> stocks = new ArrayList<String>();
 		for(StockandPred ms : myStocks){
 			for(int i=0;i<19;i++){
 				ms.predictions[i] = ms.predictions[i+1];
+				ms.futurePrices[i] = ms.futurePrices[i+1];
 			}
 		}
 
@@ -225,11 +272,17 @@ public class AutoTrader extends Thread {
 							ms.predictions[0] = vals.get(0);
 							ms.predictions[4] = vals.get(1);
 							ms.predictions[19] = vals.get(2);
+							ms.getCurrentPrice();
+							ms.futurePrices[0] = vals.get(0) * ms.currentPrice /100.0;
+							ms.futurePrices[4] = vals.get(1) * ms.currentPrice /100.0;
+							ms.futurePrices[19] = vals.get(2) * ms.currentPrice /100.0;
 
 						}
 					}
+					//ms.updateFuturePrices();
 					ms.updatePrices();
 				}
+
 				stocks.remove(nname);
 
 			}
@@ -251,10 +304,16 @@ public class AutoTrader extends Thread {
         	sorted.removeAll(filter);
 			 */
 
-			if(stock.thirdPrice < stock.nextPrice)
+			if(stock.currentPrice > stock.nextPrice){
+				System.out.println("SELL: " + stock.currentPrice + " " + stock.nextPrice + " " + stock.thirdPrice);
 				sellStocks(stock);
-			if(stock.thirdPrice >= stock.nextPrice)
+			}
+			if(stock.currentPrice <= stock.nextPrice){
+				
 				buyStocks(stock);
+				
+				System.out.println("BUY: " + stock.name + " " +stock.currentPrice + " " + stock.nextPrice + " " + stock.thirdPrice);
+			}
 
 
 
@@ -301,7 +360,7 @@ public class AutoTrader extends Thread {
 				statement.setString(5,  UserData.USER);
 				statement.addBatch();
 				//JOptionPane.showMessageDialog(null,"Bought " + stock + " " + (newAmount) + " at "  + salePrice/10000.0);
-				//log += "Bought " + stock + " " + (newAmount) + " at "  + salePrice/10000.0;
+				log += "Bought " + stock + " " + (newAmount) + " at "  + salePrice/10000.0;
 			}
 			System.out.println(statement.toString());
 
@@ -347,7 +406,7 @@ public class AutoTrader extends Thread {
 			int newAmount = 0;
 			int currentAmount = UserData.holdings.get(stock);
 			int salePrice = (int)(100 * portal.stockOrders.get(stock).getPrice()); // price in cents
-			if(newAmount < UserData.holdings.get(stock)){
+			
 				statement.setInt(1, salePrice);
 				statement.setInt(2, currentAmount);
 				statement.setString(3, "sell");
@@ -355,13 +414,14 @@ public class AutoTrader extends Thread {
 				statement.setString(5,  UserData.USER);
 				statement.addBatch();
 				//JOptionPane.showMessageDialog(null,"Sold " + stock + " at "  + salePrice/10000.0);
-				//log += "Sold " + stock + " at "  + salePrice/10000.0;
-			}
-
+				log += "\nSold " + stock + " at "  + salePrice/10000.0 +"\n";
+			
+			System.out.println(statement.toString());
 
 
 			statement.executeBatch();
 		} catch (SQLException e) {
+			String s = e.getStackTrace().toString();
 			e.printStackTrace();
 		}
 	}
@@ -384,6 +444,7 @@ public class AutoTrader extends Thread {
 				for(int i=0;i<stock.predictions.length;i++){
 					log += stock.predictions[i] + ", ";
 				}
+				log+="\n";
 			}
 		}
 		System.out.println(log);
@@ -415,7 +476,7 @@ public class AutoTrader extends Thread {
 		double nextPrice;
 		double thirdPrice;
 		double[] futurePrices;
-		double currentPrice;
+		double currentPrice = 0.0;
 
 
 		public StockandPred(String name){
@@ -428,7 +489,7 @@ public class AutoTrader extends Thread {
 
 		public void updatePrices(){
 			getCurrentPrice();
-			updateFuturePrices();
+			//updateFuturePrices();
 			updateNextPrice();
 			updateMaxPrice();
 		}
@@ -447,13 +508,13 @@ public class AutoTrader extends Thread {
 		}
 		/////HERE? XXX 
 		private void updateFuturePrices(){
-			for(int i=0;i<20;i++){
-				futurePrices[i] = currentPrice * predictions[i] / 100.0;
+			for(int i=0;i<19;i++){
+				futurePrices[i] = futurePrices[i+1];
 			}
 		}
 		//Gets current price of current stock in dollars
 		private double getCurrentPrice(){
-			String priceStr="0.0";
+			String priceStr= Double.toString(currentPrice);
 
 			try {
 				connection = DriverManager.getConnection(jdbcUrl, username, password);
