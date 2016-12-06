@@ -121,7 +121,7 @@ public class Portal extends JFrame{
 
 		// Set up the player panel
 		playerPanel = new JPanel();
-		UTeamPanel uteamPanel = new UTeamPanel();
+		UTeamPanel uteamPanel = new UTeamPanel(this);
 		uteamPanel.setBackground(Color.white);
 		DTeamPanel dteamPanel = new DTeamPanel(this);
 		dteamPanel.setBackground(new Color(0, 35, 102));
