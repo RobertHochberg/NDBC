@@ -6,6 +6,9 @@ public class DStack extends ArrayList<Float> {
 
 	public DStack(){
 		super(20);
+		
+		for(int i=0;i<20;i++)
+			add(0f);
 	}
 	
 	public void addMessage(float one, float five, float twenty){

@@ -13,6 +13,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Map.Entry;
 import java.util.Random;
 
 import javax.crypto.BadPaddingException;
@@ -279,6 +280,10 @@ public class DTeamPanel extends JPanel {
 			String queryString = "select t1.message from d1 t1 where t1.id = (select t2.id from d1 t2 where t2.user = t1.user order by t2.id desc limit 1);";
 			ResultSet resultSet = statement.executeQuery(queryString);
 			
+			System.out.println("HI there");
+			for(Entry<String, DStack> st : prices.entrySet())
+				System.out.println(st.getKey() + ":" + Arrays.toString(st.getValue().toArray()));
+			
 			for(DStack st : prices.values())
 				st.pop();
 			
@@ -290,14 +295,16 @@ public class DTeamPanel extends JPanel {
 				stocks = decrypt(resultSet.getString(1), keyField.getText()).split(" ");
 				for(String s : stocks){
 					String stockName = s.split(":")[0];
-					stock = portal.stockOrders.get(stockName);
+					stock = portal.stockOrders.get(s.split(":")[0]);
+					if(stock == null)
+						continue;
 					final double price = stock.getPrice();
-					future = (Float[])Arrays.stream(s.split(":")[1].split("-")).map((x) -> Float.parseFloat(x)*price).toArray(size -> new Float[size]);
+					future = (Float[])Arrays.stream(s.split(":")[1].split("-")).map((x) -> Float.parseFloat(x)).toArray(size -> new Float[size]);
 					
 					if(!prices.containsKey(stockName))
 						prices.put(stockName, new DStack());
 					
-					prices.get(stockName).addMessage(future);
+					prices.get(stockName).addMessage((float)(future[0]*price), (float)(future[1]*price), (float)(future[2]*price));
 					
 					if(prices.get(s.split(":")[0]).buy()){
 						stock.setDesiredNumShares(100);
