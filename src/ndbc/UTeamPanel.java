@@ -3,32 +3,15 @@ package ndbc;
 import java.awt.Color;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
-import java.sql.Connection;
 
-import javax.swing.JButton;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
+import java.sql.*;
 
-import javax.swing.BoxLayout;
-import javax.swing.ButtonGroup;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JRadioButton;
-import javax.swing.JTextArea;
-import javax.swing.Timer;
+import javax.swing.*;
 
 import java.awt.Font;
 
@@ -56,10 +39,9 @@ public class UTeamPanel extends JPanel {
 	private final BigInteger a = new BigInteger(128, new Random());
 	private BigInteger key = null;
 	private BigInteger dheKey;
-	private Map<String, BigInteger> dheKeys = new HashMap<>();
 	private boolean leader = false;
 	Timer listenForDHE;
-	List<String> usernames = Arrays.asList("bholdridge", "mbolot", "bmccutchon", "asokol");
+	List<String> usernames = Arrays.asList("bholdridge", "mbolot", "bmccutchon", "asokol", "rgrosso");
 
 	public UTeamPanel(Portal portal) {
 
@@ -73,6 +55,7 @@ public class UTeamPanel extends JPanel {
 		startDhe.addActionListener(e -> {
 			leader = true;
 			key = new BigInteger(128, new Random());
+			System.out.println(key);
 			String query = "INSERT INTO u2 (username, gToTheAModP) values (?, ?);";
 			try (Connection connection = DriverManager.getConnection(
 							jdbcUrl, UserData.USER, UserData.PW);
@@ -85,7 +68,7 @@ public class UTeamPanel extends JPanel {
 
 				listenForDHE = new Timer(1000, e2 -> {
 					String selQuery = "SELECT gToTheBModP FROM u2 WHERE username = ?";
-					String insQuery = "UPDATE u2 SET `key` = AES_ENCRYPT(?, ?)";
+					String insQuery = "UPDATE u2 SET `key` = AES_ENCRYPT(?, ?) WHERE username = ?";
 					try (Connection con = DriverManager.getConnection(
 									jdbcUrl, UserData.USER, UserData.PW);
 							PreparedStatement selStmt = con.prepareStatement(selQuery);
@@ -99,6 +82,7 @@ public class UTeamPanel extends JPanel {
 								BigInteger dheKey = res.toBigInteger().modPow(a, p);
 								insStmt.setBigDecimal(1, new BigDecimal(key));
 								insStmt.setBigDecimal(2, new BigDecimal(dheKey));
+								insStmt.setString(3, user);
 								insStmt.executeUpdate();
 							}
 						}
@@ -133,16 +117,18 @@ public class UTeamPanel extends JPanel {
 				dheKey = rs.getBigDecimal(1).toBigInteger().modPow(a, p);
 
 				listenForDHE = new Timer(1000, e2 -> {
-					String selQuery1 = "SELECT `key` FROM u2 WHERE username = ?";
+					String selQuery1 = "SELECT AES_DECRYPT(`key`, ?) FROM u2 WHERE username = ?";
 					try (Connection con = DriverManager.getConnection(
 									jdbcUrl, UserData.USER, UserData.PW);
 							PreparedStatement selStmt1 = con.prepareStatement(selQuery1)) {
-						selStmt1.setString(1, UserData.USER);
+						selStmt1.setBigDecimal(1, new BigDecimal(dheKey));
+						selStmt1.setString(2, UserData.USER);
 						ResultSet rs1 = selStmt1.executeQuery();
 						rs1.next();
 						BigDecimal res = rs1.getBigDecimal(1);
 						if (res != null) {
 							key = res.toBigInteger();
+							System.out.println(key);
 						}
 					} catch (SQLException e1) {
 						e1.printStackTrace();
