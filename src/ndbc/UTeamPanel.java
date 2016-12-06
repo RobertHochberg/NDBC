@@ -77,7 +77,9 @@ public class UTeamPanel extends JPanel {
 							PreparedStatement insStmt = con.prepareStatement(insQuery)) {
 						for (String user : usernames) {
 							selStmt.setString(1, user);
-							BigDecimal res = selStmt.executeQuery().getBigDecimal(1);
+							ResultSet rs = selStmt.executeQuery();
+							rs.next();
+							BigDecimal res = rs.getBigDecimal(1);
 							if (res != null) {
 								BigInteger dheKey = res.toBigInteger().modPow(a, p);
 								insStmt.setBigDecimal(1, new BigDecimal(key));
@@ -104,7 +106,7 @@ public class UTeamPanel extends JPanel {
 			String insQuery = "UPDATE u2 SET gToTheBModP = ? WHERE username = ?";
 			try (Connection connection = DriverManager.getConnection(
 							jdbcUrl, UserData.USER, UserData.PW);
-					PreparedStatement insStmt = connection.prepareStatement(selQuery);
+					PreparedStatement insStmt = connection.prepareStatement(insQuery);
 					PreparedStatement selStmt = connection.prepareStatement(selQuery)) {
 				insStmt.setString(2, UserData.USER);
 				insStmt.setBigDecimal(1, new BigDecimal(g.modPow(a, p)));
@@ -112,6 +114,7 @@ public class UTeamPanel extends JPanel {
 
 				selStmt.setString(1, UserData.USER);
 				ResultSet rs = selStmt.executeQuery();
+				rs.next();
 				dheKey = rs.getBigDecimal(1).toBigInteger().modPow(a, p);
 
 				listenForDHE = new Timer(1000, e2 -> {
@@ -120,7 +123,9 @@ public class UTeamPanel extends JPanel {
 									jdbcUrl, UserData.USER, UserData.PW);
 							PreparedStatement selStmt1 = con.prepareStatement(selQuery1)) {
 						selStmt1.setString(1, UserData.USER);
-						BigDecimal res = selStmt1.executeQuery().getBigDecimal(1);
+						ResultSet rs1 = selStmt1.executeQuery();
+						rs1.next();
+						BigDecimal res = rs1.getBigDecimal(1);
 						if (res != null) {
 							key = res.toBigInteger();
 						}
