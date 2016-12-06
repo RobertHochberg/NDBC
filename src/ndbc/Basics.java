@@ -19,7 +19,7 @@ public class Basics extends Thread {
 			
 			timeleft = (int)((System.currentTimeMillis() - startTime) / 1000);
 			
-			if(timeleft > 5){
+			if(timeleft > 10){
 				panel.updateBotofPower();
 				startTime = System.currentTimeMillis();
 			}
