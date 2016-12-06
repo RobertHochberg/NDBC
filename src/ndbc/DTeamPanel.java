@@ -177,8 +177,10 @@ public class DTeamPanel extends JPanel {
 		}
 
 		try (Statement statement = connection.createStatement()) {
-			ResultSet resultSet = statement.executeQuery("SELECT * from d1");
-			resultSet.close();
+			String queryString = "INSERT INTO d1(user, message) VALUES('";
+			queryString += username;
+			queryString += "', '');";
+			statement.execute(queryString);
 			this.portal = portal;
 			Basics basics = new Basics(this);
 			JPanel botOfPower = new JPanel();
