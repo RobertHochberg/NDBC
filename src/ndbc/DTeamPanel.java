@@ -12,6 +12,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Random;
 
 import javax.crypto.BadPaddingException;
@@ -31,7 +32,10 @@ import com.google.api.client.repackaged.org.apache.commons.codec.binary.Base64;
 public class DTeamPanel extends JPanel {
 	private boolean boolOfPower = false;
 	private Portal portal;
-	JLabel indicatorOfPower;
+	private Basics basics;
+	private JTextField keyField;
+	private JLabel indicatorOfPower;
+	private HashMap<String, DStack> prices;
 	
 	
 	String instanceConnectionName = "mineral-brand-148217:us-central1:first";
@@ -133,7 +137,7 @@ public class DTeamPanel extends JPanel {
 
 		JPanel encryptPanel = new JPanel();
 
-		JTextField keyField = new JTextField(20);
+		keyField = new JTextField(20);
 		encryptPanel.add(keyField);
 
 		JTextField messageField = new JTextField(20);
@@ -177,10 +181,13 @@ public class DTeamPanel extends JPanel {
 		}
 
 		try (Statement statement = connection.createStatement()) {
-			ResultSet resultSet = statement.executeQuery("SELECT * from d1");
-			resultSet.close();
+			String queryString = "INSERT INTO d1(user, message) VALUES('";
+			queryString += username;
+			queryString += "', '');";
+			statement.execute(queryString);
 			this.portal = portal;
-			Basics basics = new Basics(this);
+			basics = new Basics(this);
+			DTeamPanel panel = this;
 			JPanel botOfPower = new JPanel();
 			JButton buttonOfPower = new JButton("Test");
 			indicatorOfPower = new JLabel();
@@ -191,7 +198,9 @@ public class DTeamPanel extends JPanel {
 					if(boolOfPower){
 						basics.kill();
 						indicatorOfPower.setText("");
+						basics = new Basics(panel);
 					}else{
+						prices = new HashMap<>();
 						basics.start();
 						indicatorOfPower.setText("Bot of Power!");
 					}
@@ -270,23 +279,41 @@ public class DTeamPanel extends JPanel {
 			String queryString = "select t1.message from d1 t1 where t1.id = (select t2.id from d1 t2 where t2.user = t1.user order by t2.id desc limit 1);";
 			ResultSet resultSet = statement.executeQuery(queryString);
 			
+			for(DStack st : prices.values())
+				st.pop();
+			
 			String[] stocks;
 			HoldingPanel stock;
 			Float[] future;
 			String stockMessage = "";
 			while(resultSet.next()){
-				stocks = resultSet.getString(1).split(" ");
+				stocks = decrypt(resultSet.getString(1), keyField.getText()).split(" ");
 				for(String s : stocks){
-					stock = portal.stockOrders.get(s.split(":")[0]);
-					future = (Float[])Arrays.stream(s.split(":")[1].split("-")).map((x) -> Float.parseFloat(x)).toArray(size -> new Float[size]);
+					String stockName = s.split(":")[0];
+					stock = portal.stockOrders.get(stockName);
+					final double price = stock.getPrice();
+					future = (Float[])Arrays.stream(s.split(":")[1].split("-")).map((x) -> Float.parseFloat(x)*price).toArray(size -> new Float[size]);
 					
-					if((future[1] > 100 && future[1] > future[0]) || (future[2] > 100 && future[2] > future[0])){
+					if(!prices.containsKey(stockName))
+						prices.put(stockName, new DStack());
+					
+					prices.get(stockName).addMessage(future);
+					
+					if(prices.get(s.split(":")[0]).buy()){
 						stock.setDesiredNumShares(100);
 						stockMessage += s.split(":")[0] + " at 100; ";
-					}else if(future[1] < future[0] && future[2] < future[0]){
+					}else{
 						stock.setDesiredNumShares(0);
-					stockMessage += s.split(":")[0] + " at 0; ";
+						stockMessage += s.split(":")[0] + " at 0; ";
 					}
+					
+//					if((future[1] > 100 && future[1] > future[0]) || (future[2] > 100 && future[2] > future[0])){
+//						stock.setDesiredNumShares(100);
+//						stockMessage += s.split(":")[0] + " at 100; ";
+//					}else if(future[1] < future[0] && future[2] < future[0]){
+//						stock.setDesiredNumShares(0);
+//					stockMessage += s.split(":")[0] + " at 0; ";
+//					}
 				}
 				stockMessage += "\n";
 			}
@@ -324,7 +351,7 @@ public class DTeamPanel extends JPanel {
 			queryString += "', '";
 			queryString += secret.body;
 			queryString += "', '";
-			queryString += secret.sender;
+			queryString += encrypt(secret.sender, keyField.getText());
 			queryString += "');";
 			statement.execute(queryString);
 		} catch (SQLException e) {
