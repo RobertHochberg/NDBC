@@ -1,7 +1,6 @@
 package ndbc;
 
 import java.awt.Color;
-import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.List;
@@ -62,13 +61,13 @@ public class UTeamPanel extends JPanel {
 					PreparedStatement statement = connection.prepareStatement(query)) {
 				for (String user : usernames) {
 					statement.setString(1, user);
-					statement.setBigDecimal(2, new BigDecimal(g.modPow(a, p)));
+					statement.setString(2, g.modPow(a, p).toString(16));
 					statement.execute();
 				}
 
 				listenForDHE = new Timer(1000, e2 -> {
 					String selQuery = "SELECT gToTheBModP FROM u2 WHERE username = ?";
-					String insQuery = "UPDATE u2 SET `key` = AES_ENCRYPT(?, ?) WHERE username = ?";
+					String insQuery = "UPDATE u2 SET `key` = AES_ENCRYPT(?, UNHEX(?)) WHERE username = ?";
 					try (Connection con = DriverManager.getConnection(
 									jdbcUrl, UserData.USER, UserData.PW);
 							PreparedStatement selStmt = con.prepareStatement(selQuery);
@@ -77,11 +76,11 @@ public class UTeamPanel extends JPanel {
 							selStmt.setString(1, user);
 							ResultSet rs = selStmt.executeQuery();
 							rs.next();
-							BigDecimal res = rs.getBigDecimal(1);
+							String res = rs.getString(1);
 							if (res != null) {
-								BigInteger dheKey = res.toBigInteger().modPow(a, p);
-								insStmt.setBigDecimal(1, new BigDecimal(key));
-								insStmt.setBigDecimal(2, new BigDecimal(dheKey));
+								BigInteger dheKey = new BigInteger(res, 16).modPow(a, p);
+								insStmt.setString(1, key.toString(16));
+								insStmt.setString(2, dheKey.toString(16));
 								insStmt.setString(3, user);
 								insStmt.executeUpdate();
 							}
@@ -108,26 +107,26 @@ public class UTeamPanel extends JPanel {
 					PreparedStatement insStmt = connection.prepareStatement(insQuery);
 					PreparedStatement selStmt = connection.prepareStatement(selQuery)) {
 				insStmt.setString(2, UserData.USER);
-				insStmt.setBigDecimal(1, new BigDecimal(g.modPow(a, p)));
+				insStmt.setString(1, g.modPow(a, p).toString(16));
 				insStmt.executeUpdate();
 
 				selStmt.setString(1, UserData.USER);
 				ResultSet rs = selStmt.executeQuery();
 				rs.next();
-				dheKey = rs.getBigDecimal(1).toBigInteger().modPow(a, p);
+				dheKey = new BigInteger(rs.getString(1), 16).modPow(a, p);
 
 				listenForDHE = new Timer(1000, e2 -> {
-					String selQuery1 = "SELECT AES_DECRYPT(`key`, ?) FROM u2 WHERE username = ?";
+					String selQuery1 = "SELECT AES_DECRYPT(`key`, UNHEX(?)) FROM u2 WHERE username = ?";
 					try (Connection con = DriverManager.getConnection(
 									jdbcUrl, UserData.USER, UserData.PW);
 							PreparedStatement selStmt1 = con.prepareStatement(selQuery1)) {
-						selStmt1.setBigDecimal(1, new BigDecimal(dheKey));
+						selStmt1.setString(1, dheKey.toString(16));
 						selStmt1.setString(2, UserData.USER);
 						ResultSet rs1 = selStmt1.executeQuery();
 						rs1.next();
-						BigDecimal res = rs1.getBigDecimal(1);
+						String res = rs1.getString(1);
 						if (res != null) {
-							key = res.toBigInteger();
+							key = new BigInteger(res, 16);
 							System.out.println(key);
 						}
 					} catch (SQLException e1) {
