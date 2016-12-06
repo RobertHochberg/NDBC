@@ -20,7 +20,7 @@ public class AdminTasks extends Thread{
 
 	@Override
 	public void run() {
-		int UPDATE_DELAY = 5; // in seconds
+		int UPDATE_DELAY = 0; // in seconds
 		int round = 0;
 		long lastUpdateTime = -1;
 		getHistoricalValues(); // fill the prices hashmap
@@ -43,7 +43,10 @@ public class AdminTasks extends Thread{
 
 			// Generate and send secret messages
 			sendSecretMessages();
-
+			
+			// find the net worths and put them in the game data table
+			updateTeamNetWorths();
+			
 			try {
 				Thread.sleep(1000 * UPDATE_DELAY);
 			} catch (InterruptedException e) {
@@ -81,7 +84,8 @@ public class AdminTasks extends Thread{
 			ResultSet resultSet = statement.executeQuery("SELECT MAX(transactionId) FROM transactions;");
 			resultSet.next();
 			lastTransactionId = resultSet.getInt(1);
-			resultSet = statement.executeQuery("SELECT lastTransactionId FROM snapshots;");
+			resultSet = statement.executeQuery("SELECT value FROM gameData " + 
+					"WHERE variable='snapshots';");
 			resultSet.next();
 			lastSnapshot = resultSet.getInt(1);
 		} catch (SQLException e) {
@@ -121,7 +125,8 @@ public class AdminTasks extends Thread{
 		int lastSnapshot = 0;
 		try (Statement statement = connection.createStatement()) {
 			// Get the last snapshot time
-			ResultSet resultSet = statement.executeQuery("SELECT lastTransactionId FROM snapshots;");
+			ResultSet resultSet = statement.executeQuery("SELECT value FROM gameData " +
+					"WHERE variable='snapshots';");
 			resultSet.next();
 			lastSnapshot = resultSet.getInt(1); 
 		} catch (SQLException e) {
@@ -198,7 +203,8 @@ public class AdminTasks extends Thread{
 		}
 		if(lastTransactionId >= 0){
 			try (Statement statement = connection.createStatement()) {
-				statement.execute("UPDATE snapshots SET lastTransactionId = " + lastTransactionId + ";");
+				statement.execute("UPDATE gameData SET value = " + lastTransactionId + 
+						" WHERE variable = 'snapshots';");
 			} catch (SQLException e) {
 				e.printStackTrace();
 			}
@@ -252,8 +258,9 @@ public class AdminTasks extends Thread{
 
 		// Update the round in the currentRound table
 		try (Statement statement = connection.createStatement()) {
-			boolean x = statement.execute("UPDATE currentRound SET round = " + round + ";");
-			if(!x) System.out.println("Could not update current round in currentRound table");
+			boolean x = statement.execute("UPDATE gameData SET value = " + round + 
+					" WHERE variable = 'round';");
+			if(!x) System.out.println("Could not update current round in gameData table");
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
@@ -285,7 +292,7 @@ public class AdminTasks extends Thread{
 		// First find the current round, according to the database
 		int currentRound = 0;
 		try (Statement statement = connection.createStatement()) {
-			String queryString = "SELECT round FROM currentRound;";
+			String queryString = "SELECT value FROM gameData WHERE variable = 'round';";
 			ResultSet resultSet = statement.executeQuery(queryString);
 			resultSet.next();
 			currentRound = resultSet.getInt(1);
@@ -304,8 +311,8 @@ public class AdminTasks extends Thread{
 					HashMap<String, Integer> n5 = prices.get(currentRound + 5);
 					HashMap<String, Integer> n20 = prices.get(currentRound + 20);
 					msg += String.format("%s:%.2f-%.2f-%.2f ",
-							s, 100*((double)n1.get(s))/n0.get(s)-1, 100*((double)n5.get(s))/n0.get(s)-1, 
-							100*((double)n20.get(s))/n0.get(s)-1);
+							s, 100*((double)n1.get(s))/n0.get(s), 100*((double)n5.get(s))/n0.get(s), 
+							100*((double)n20.get(s))/n0.get(s));
 				}
 				statement.setString(1, m);
 				statement.setString(2, msg);
@@ -690,6 +697,18 @@ public class AdminTasks extends Thread{
 			e.printStackTrace();
 		}
 
+		grant  = "GRANT SELECT ON ndbc.gameData TO ?@'%'";
+		try (PreparedStatement statement = connection.prepareStatement(grant)) {
+			for(String s : Constants.users){
+				statement.setString(1, s);
+				statement.addBatch();
+			}
+			int[] x = statement.executeBatch();
+			System.out.println("owns   Privileges: " + Arrays.toString(x));
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+
 		// Grant permission to their own column in the secretMessages table
 		try (Statement statement = connection.createStatement()) {
 			for(String s : Constants.users){
@@ -722,6 +741,12 @@ public class AdminTasks extends Thread{
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
-
+	}
+	
+	/*
+	 * Updates teams' net worths, and places the values in the database.
+	 */
+	static void updateTeamNetWorths(){
+		
 	}
 }

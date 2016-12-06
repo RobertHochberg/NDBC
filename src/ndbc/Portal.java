@@ -35,6 +35,10 @@ public class Portal extends JFrame{
 	JLabel currentOrderLabel;
 	public int secondsLeft;
 	JLabel secondsLeftLabel;
+	JLabel UWorthLabel;
+	JLabel DWorthLabel;
+	int UWorth; // Net worth of team
+	int DWorth; // Net worth of team
 	String nullpw = "";
 
 	// Message panel
@@ -75,7 +79,7 @@ public class Portal extends JFrame{
 
 		// Set up the Holdings Panel
 		holdingsPanel = new JPanel();
-		holdingsPanel.setLayout(new GridLayout(10, 3));
+		holdingsPanel.setLayout(new GridLayout(10, 5));
 		HashMap<String, Integer> centsPrices = getCentsPrices();
 		stockOrders = new HashMap<>();
 		for(String s : stocks){
@@ -98,11 +102,17 @@ public class Portal extends JFrame{
 		secondsLeft = 60;
 		this.secondsLeftLabel = new JLabel();
 		this.secondsLeftLabel.setText(String.valueOf(secondsLeft));
+		this.UWorthLabel = new JLabel();
+		UWorthLabel.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 20));
+		this.DWorthLabel = new JLabel();
+		DWorthLabel.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 20));
 
-		statusPanel.setLayout(new GridLayout(1, 4));
+		statusPanel.setLayout(new GridLayout(1, 5));
 		statusPanel.add(currentCashLabel);
 		statusPanel.add(currentNetWorthLabel);
 		statusPanel.add(secondsLeftLabel);
+		statusPanel.add(UWorthLabel);
+		statusPanel.add(DWorthLabel);
 		this.add(statusPanel, BorderLayout.NORTH);
 
 		// Set up the messaging panel
@@ -111,7 +121,7 @@ public class Portal extends JFrame{
 
 		// Set up the player panel
 		playerPanel = new JPanel();
-		UTeamPanel uteamPanel = new UTeamPanel();
+		UTeamPanel uteamPanel = new UTeamPanel(this);
 		uteamPanel.setBackground(Color.white);
 		DTeamPanel dteamPanel = new DTeamPanel(this);
 		dteamPanel.setBackground(new Color(0, 35, 102));
@@ -183,6 +193,8 @@ public class Portal extends JFrame{
 		this.currentOrderLabel.setText("Order Amount: " + String.valueOf(currentOrder));
 		this.currentNetWorthLabel.setText("Net Worth: $" + String.valueOf(UserData.currentNetWorth/100.0));
 		this.secondsLeftLabel.setText("Time until trade: " + String.valueOf(secondsLeft));
+		this.UWorthLabel.setText("U: " + String.valueOf(UWorth/100.0));
+		this.DWorthLabel.setText("D: " + String.valueOf(DWorth/100.0));
 		this.statusPanel.repaint();
 	}
 
@@ -205,6 +217,63 @@ public class Portal extends JFrame{
 	void setOrderable(boolean b){
 		for(String s : Constants.stocks){
 			this.stockOrders.get(s).enable(b);
+		}
+	}
+
+	/*
+	 * Get the net worth of the two teams
+	 */
+	public void getNetWorths(){
+		String instanceConnectionName = "mineral-brand-148217:us-central1:first";
+		String databaseName = "ndbc";
+		String username = UserData.USER;
+		String password = UserData.PW;
+		String jdbcUrl = String.format(
+				"jdbc:mysql://google/%s?cloudSqlInstance=%s&"
+						+ "socketFactory=com.google.cloud.sql.mysql.SocketFactory",
+						databaseName,
+						instanceConnectionName);
+
+		Connection connection = null;
+		try {
+			connection = DriverManager.getConnection(jdbcUrl, username, password);
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		
+		// Get stock holdings
+		try (Statement statement = connection.createStatement()) {
+			String queryString = "SELECT users.team, SUM(quantity*currentPrice) " +
+					"FROM owns JOIN stocks ON owns.stock=stocks.symbol " +
+					"JOIN users ON users.username = owns.username GROUP BY users.team;";
+			ResultSet resultSet = statement.executeQuery(queryString);
+			while (resultSet.next()) {
+				System.out.println(resultSet.getString(1));
+				System.out.println(resultSet.getInt(2));
+				if(resultSet.getString(1).equals("U"))
+					UWorth = resultSet.getInt(2);
+				if(resultSet.getString(1).equals("D"))
+					DWorth = resultSet.getInt(2);
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		
+		// Get cash
+		try (Statement statement = connection.createStatement()) {
+			String queryString = "SELECT team, SUM(cash) " +
+					"FROM users GROUP BY team;";
+			ResultSet resultSet = statement.executeQuery(queryString);
+			while (resultSet.next()) {
+				System.out.println(resultSet.getString(1));
+				System.out.println(resultSet.getInt(2));
+				if(resultSet.getString(1).equals("U"))
+					UWorth += resultSet.getInt(2);
+				if(resultSet.getString(1).equals("D"))
+					DWorth += resultSet.getInt(2);
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
 		}
 	}
 }
