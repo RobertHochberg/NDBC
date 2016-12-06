@@ -311,8 +311,8 @@ public class AdminTasks extends Thread{
 					HashMap<String, Integer> n5 = prices.get(currentRound + 5);
 					HashMap<String, Integer> n20 = prices.get(currentRound + 20);
 					msg += String.format("%s:%.2f-%.2f-%.2f ",
-							s, 100*((double)n1.get(s))/n0.get(s)-1, 100*((double)n5.get(s))/n0.get(s)-1, 
-							100*((double)n20.get(s))/n0.get(s)-1);
+							s, 100*((double)n1.get(s))/n0.get(s), 100*((double)n5.get(s))/n0.get(s), 
+							100*((double)n20.get(s))/n0.get(s));
 				}
 				statement.setString(1, m);
 				statement.setString(2, msg);
