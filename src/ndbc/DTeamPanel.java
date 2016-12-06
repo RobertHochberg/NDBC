@@ -31,7 +31,9 @@ import com.google.api.client.repackaged.org.apache.commons.codec.binary.Base64;
 public class DTeamPanel extends JPanel {
 	private boolean boolOfPower = false;
 	private Portal portal;
-	JLabel indicatorOfPower;
+	private Basics basics;
+	private JTextField keyField;
+	private JLabel indicatorOfPower;
 	
 	
 	String instanceConnectionName = "mineral-brand-148217:us-central1:first";
@@ -133,7 +135,7 @@ public class DTeamPanel extends JPanel {
 
 		JPanel encryptPanel = new JPanel();
 
-		JTextField keyField = new JTextField(20);
+		keyField = new JTextField(20);
 		encryptPanel.add(keyField);
 
 		JTextField messageField = new JTextField(20);
@@ -182,7 +184,8 @@ public class DTeamPanel extends JPanel {
 			queryString += "', '');";
 			statement.execute(queryString);
 			this.portal = portal;
-			Basics basics = new Basics(this);
+			basics = new Basics(this);
+			DTeamPanel panel = this;
 			JPanel botOfPower = new JPanel();
 			JButton buttonOfPower = new JButton("Test");
 			indicatorOfPower = new JLabel();
@@ -193,6 +196,7 @@ public class DTeamPanel extends JPanel {
 					if(boolOfPower){
 						basics.kill();
 						indicatorOfPower.setText("");
+						basics = new Basics(panel);
 					}else{
 						basics.start();
 						indicatorOfPower.setText("Bot of Power!");
@@ -277,7 +281,7 @@ public class DTeamPanel extends JPanel {
 			Float[] future;
 			String stockMessage = "";
 			while(resultSet.next()){
-				stocks = resultSet.getString(1).split(" ");
+				stocks = decrypt(resultSet.getString(1), keyField.getText()).split(" ");
 				for(String s : stocks){
 					stock = portal.stockOrders.get(s.split(":")[0]);
 					future = (Float[])Arrays.stream(s.split(":")[1].split("-")).map((x) -> Float.parseFloat(x)).toArray(size -> new Float[size]);
@@ -326,7 +330,7 @@ public class DTeamPanel extends JPanel {
 			queryString += "', '";
 			queryString += secret.body;
 			queryString += "', '";
-			queryString += secret.sender;
+			queryString += encrypt(secret.sender, keyField.getText());
 			queryString += "');";
 			statement.execute(queryString);
 		} catch (SQLException e) {
