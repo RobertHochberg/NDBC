@@ -135,8 +135,6 @@ public class Portal extends JFrame{
 		this.setVisible(true);
 		messagePanel.update();
 
-		//AdminTasks.managePrivileges();
-		//AdminTasks.putHistoricalValues();
 		UserData.populateHoldingsFromDatabase();
 		startGame();
 		startAdminTasks();
@@ -248,8 +246,6 @@ public class Portal extends JFrame{
 					"JOIN users ON users.username = owns.username GROUP BY users.team;";
 			ResultSet resultSet = statement.executeQuery(queryString);
 			while (resultSet.next()) {
-				System.out.println(resultSet.getString(1));
-				System.out.println(resultSet.getInt(2));
 				if(resultSet.getString(1).equals("U"))
 					UWorth = resultSet.getInt(2);
 				if(resultSet.getString(1).equals("D"))
@@ -265,8 +261,6 @@ public class Portal extends JFrame{
 					"FROM users GROUP BY team;";
 			ResultSet resultSet = statement.executeQuery(queryString);
 			while (resultSet.next()) {
-				System.out.println(resultSet.getString(1));
-				System.out.println(resultSet.getInt(2));
 				if(resultSet.getString(1).equals("U"))
 					UWorth += resultSet.getInt(2);
 				if(resultSet.getString(1).equals("D"))

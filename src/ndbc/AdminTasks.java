@@ -20,11 +20,14 @@ public class AdminTasks extends Thread{
 
 	@Override
 	public void run() {
-		int UPDATE_DELAY = 0; // in seconds
+		double UPDATE_DELAY = 0.5; // in seconds
 		int round = 0;
 		long lastUpdateTime = -1;
 		getHistoricalValues(); // fill the prices hashmap
-
+		//resetGame(); // Set owns to 0, cash to $1000.00, delete transactions
+		//managePrivileges();
+		//putHistoricalValues();
+		
 		while(true){
 			// Check for new transactions and update if necessary
 			System.out.println("Checking Snapshot");
@@ -38,17 +41,12 @@ public class AdminTasks extends Thread{
 			if((System.currentTimeMillis() - lastUpdateTime) / 1000 > Constants.GAME_PERIOD){
 				lastUpdateTime = System.currentTimeMillis();
 				setPricesFromHistory(round);
+				sendSecretMessages();
 				round++;
 			}
-
-			// Generate and send secret messages
-			sendSecretMessages();
-			
-			// find the net worths and put them in the game data table
-			updateTeamNetWorths();
 			
 			try {
-				Thread.sleep(1000 * UPDATE_DELAY);
+				Thread.sleep((int)(1000 * UPDATE_DELAY));
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
@@ -371,7 +369,7 @@ public class AdminTasks extends Thread{
 	 * Intended to be run only whenever a new game is starting
 	 */
 	static void putHistoricalValues(){
-		int SIZE_OF_HISTORY = 10000;
+		int SIZE_OF_HISTORY = 1000;
 		System.out.println("Start History");
 		String instanceConnectionName = "mineral-brand-148217:us-central1:first";
 		String databaseName = "ndbc";
@@ -531,38 +529,6 @@ public class AdminTasks extends Thread{
 
 
 	/*
-	 * Written to be used once, to set the starting prices of our 30 stocks.
-	 */
-	void setCentsPrices(){
-		String instanceConnectionName = "mineral-brand-148217:us-central1:first";
-		String databaseName = "ndbc";
-		String username = UserData.USER;
-		String password = UserData.PW;
-		String jdbcUrl = String.format(
-				"jdbc:mysql://google/%s?cloudSqlInstance=%s&"
-						+ "socketFactory=com.google.cloud.sql.mysql.SocketFactory",
-						databaseName,
-						instanceConnectionName);
-
-		Connection connection = null;
-		try {
-			connection = DriverManager.getConnection(jdbcUrl, username, password);
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-
-		try (Statement statement = connection.createStatement()) {
-			for(String s : Constants.stocks){
-				int price = ((int)(Math.random()*1000));
-				statement.execute("INSERT INTO ndbc.startPrices VALUES('" + s + "','" + price + "');");
-			}
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-	}
-
-
-	/*
 	 * Written to be used once, to set the quantities in our quantities table.
 	 * This is used solely to enforce a constraint on the # of shares that may
 	 * be owned to be in the range 0-100.
@@ -621,20 +587,6 @@ public class AdminTasks extends Thread{
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
-
-		// Take away all the privileges
-		/*
-		String revoke = "REVOKE SELECT ON ndbc.secretMessages FROM ?@'%'";
-		try (PreparedStatement statement = connection.prepareStatement(revoke)) {
-			for(String s : Constants.users){
-				statement.setString(1, s);
-				statement.addBatch();
-			}
-			statement.executeBatch();
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-		 */
 
 		// Give the appropriate privileges back
 		String grant  = "GRANT SELECT, INSERT ON ndbc.messages TO ?@'%'";
@@ -720,6 +672,20 @@ public class AdminTasks extends Thread{
 			e.printStackTrace();
 		}
 
+		// Grant permission to read the team-specific tables, u1, u2, u3, d1, d2, d3
+		try (Statement statement = connection.createStatement()) {
+			for(String s : Constants.users){
+				statement.execute("GRANT SELECT ON d1 TO '" + s + "'@'%';");
+				statement.execute("GRANT SELECT ON d2 TO '" + s + "'@'%';");
+				statement.execute("GRANT SELECT ON d3 TO '" + s + "'@'%';");
+				statement.execute("GRANT SELECT ON u1 TO '" + s + "'@'%';");
+				statement.execute("GRANT SELECT ON u2 TO '" + s + "'@'%';");
+				statement.execute("GRANT SELECT ON u3 TO '" + s + "'@'%';");
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+
 		grant  = "GRANT ALL PRIVILEGES ON play.* TO ?@'%'";
 		try (PreparedStatement statement = connection.prepareStatement(grant)) {
 			for(String s : Constants.users){
@@ -746,7 +712,33 @@ public class AdminTasks extends Thread{
 	/*
 	 * Updates teams' net worths, and places the values in the database.
 	 */
-	static void updateTeamNetWorths(){
+	void resetGame(){
+		String instanceConnectionName = "mineral-brand-148217:us-central1:first";
+		String databaseName = "ndbc";
+		String username = UserData.USER;
+		String password = UserData.PW;
+		String jdbcUrl = String.format(
+				"jdbc:mysql://google/%s?cloudSqlInstance=%s&"
+						+ "socketFactory=com.google.cloud.sql.mysql.SocketFactory",
+						databaseName,
+						instanceConnectionName);
+
+		Connection connection = null;
+		try {
+			connection = DriverManager.getConnection(jdbcUrl, username, password);
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+
+		// Flush to update right away
+		try (Statement statement = connection.createStatement()) {
+			statement.execute("UPDATE owns SET quantity=0;");
+			statement.execute("UPDATE users SET cash=100000");
+			statement.execute("DELETE FROM transactions");
+			statement.execute("DELETE FROM secretMessages");
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
 		
 	}
 }
