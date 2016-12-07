@@ -296,6 +296,7 @@ public class DTeamPanel extends JPanel {
 					}
 				}
 			});
+			botOfPower.add(joinDH);
 			
 			
 			botOfPower.setBackground(this.getBackground());
