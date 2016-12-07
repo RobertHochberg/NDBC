@@ -289,6 +289,8 @@ public class DTeamPanel extends JPanel {
 						statement.execute("insert into d2(idx,sender,message) values(0,'" + username + "','" + gPower.getText() + "');");
 						keyed[0] = true;
 						
+						
+						Statement inserts = connection.createStatement();
 						outer:
 						while(true){
 							ResultSet rs = statement.executeQuery("select idx, message from d2 where sender='" + friend + "';");
@@ -304,7 +306,7 @@ public class DTeamPanel extends JPanel {
 									gField.setText(rs.getString(2));
 									raiseGPower.getActionListeners()[0].actionPerformed(new ActionEvent(this, 0, null));
 									keyed[rs.getInt(1)+1] = true;
-									statement.execute("insert into d2(idx,sender,message) values(" + (rs.getInt(1) + 1) + ",'" + username + "','" + gPower.getText() + "');");
+									inserts.execute("insert into d2(idx,sender,message) values(" + (rs.getInt(1) + 1) + ",'" + username + "','" + gPower.getText() + "');");
 								}
 							}
 							
