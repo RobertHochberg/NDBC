@@ -213,6 +213,91 @@ public class DTeamPanel extends JPanel {
 			});
 			botOfPower.add(buttonOfPower);
 			botOfPower.add(indicatorOfPower);
+			
+			JButton initiateDH = new JButton("Initiate");
+			initiateDH.addActionListener(new ActionListener() {
+				
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					Connection connection = null;
+					try {
+						connection = DriverManager.getConnection(jdbcUrl, username, password);
+
+					} catch (SQLException e1) {
+						e1.printStackTrace();
+					}
+					
+					generateGP.getActionListeners()[0].actionPerformed(new ActionEvent(this, 0, null));
+					try  (Statement statement = connection.createStatement())  {
+						statement.execute("delete from d2");
+						statement.execute("insert into d2((idx,sender,message) values(8,'" + username + "','" + pField.getText() + "');");
+						statement.execute("insert into d2((idx,sender,message) values(9,'" + username + "','" + gField.getText() + "');");
+					} catch (SQLException e1) {
+						e1.printStackTrace();
+					}
+				}
+			});
+			botOfPower.add(initiateDH);
+			
+			JButton joinDH = new JButton("Join");
+			joinDH.addActionListener(new ActionListener() {
+				
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					
+					String friend = "";
+					String[] friends = new String[]{"jyamauchi", "jwilson"};
+					for(int i=0; i<friends.length; i++)
+						if(friends[i].equals(username))
+							friend = friends[(i+1) % friends.length];
+					
+					boolean[] keyed = new boolean[friends.length];
+					
+					Connection connection = null;
+					try {
+						connection = DriverManager.getConnection(jdbcUrl, username, password);
+
+					} catch (SQLException e1) {
+						e1.printStackTrace();
+					}
+					
+					generatePrivate.getActionListeners()[0].actionPerformed(new ActionEvent(this, 0, null));
+					raiseGPower.getActionListeners()[0].actionPerformed(new ActionEvent(this, 0, null));
+					
+					try  (Statement statement = connection.createStatement())  {
+						statement.execute("insert into d2((idx,sender,message) values(0,'" + username + "','" + gPower.getText() + "');");
+						keyed[0] = true;
+						
+						outer:
+						while(true){
+							ResultSet rs = statement.executeQuery("select idx, message from d2 where sender='" + friend + "';");
+							while(rs.next()){
+								if(rs.getInt(1) == (friends.length - 1)){
+									gField.setText(rs.getString(2));
+									raiseGPower.getActionListeners()[0].actionPerformed(new ActionEvent(this, 0, null));
+									keyField.setText(gPower.getText());
+									keyed[friends.length-1] = true;
+								} else if(!keyed[rs.getInt(1)+1]){
+									gField.setText(rs.getString(2));
+									raiseGPower.getActionListeners()[0].actionPerformed(new ActionEvent(this, 0, null));
+									statement.execute("insert into d2((idx,sender,message) values(" + (rs.getInt(1) + 1) + ",'" + username + "','" + gPower.getText() + "');");
+									keyed[rs.getInt(1)+1] = true;
+								}
+							}
+							
+							for(boolean k : keyed)
+								if(!k)
+									continue outer;
+							break;
+						}
+						
+					} catch (SQLException e1) {
+						e1.printStackTrace();
+					}
+				}
+			});
+			
+			
 			botOfPower.setBackground(this.getBackground());
 			this.add(botOfPower);
 		} catch (SQLException e) {
