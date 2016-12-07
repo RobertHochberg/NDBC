@@ -83,6 +83,8 @@ public class AES
     }
     public static void main(String args[])
     {
+    	
+    	
     	/*
                 final String strToEncrypt = "AQU:101.71-103.28-91.40 AIN:99.97-90.64-106.26 TAN:99.56-85.81-92.27";
                 final String strPssword = "thisismykey";

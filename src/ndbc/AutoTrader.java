@@ -19,7 +19,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 
 public class AutoTrader extends Thread {
-
+	//XXXX Maybe rework the entre thing. make simpler.  should be predicting based on 
 	int turn = 0;
 	int lastTurn = -1;
 	Portal portal;
@@ -63,8 +63,7 @@ public class AutoTrader extends Thread {
 		if(verifyPassword(password) == false)
 			return;
 		wait = false;
-		boolean print = true;
-
+		
 		//String[] stocks = getStocksString();
 
 		messagePanel.update();
@@ -131,7 +130,6 @@ public class AutoTrader extends Thread {
 				//}
 				if(time >=12 && time<18 && wait){
 					wait = false;
-					print = true;
 				}
 				if(time <= 2 || time >18){
 					wait = true;

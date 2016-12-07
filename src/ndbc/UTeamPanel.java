@@ -2,6 +2,12 @@ package ndbc;
 
 import java.awt.Color;
 import java.math.BigInteger;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
@@ -16,6 +22,8 @@ import java.awt.Font;
 
 public class UTeamPanel extends JPanel {
 	Portal portal;
+	String AESKey = "thisismykey";
+	
 	
 	//////Database Connection Info/////////
 	String instanceConnectionName = "mineral-brand-148217:us-central1:first";
@@ -46,7 +54,7 @@ public class UTeamPanel extends JPanel {
 
 	      super();
 	      this.portal = portal;
-
+	    AES.setKey(AESKey);
 		this.setBackground(Color.WHITE);
 
 		JButton startDhe = new JButton();
@@ -144,12 +152,12 @@ public class UTeamPanel extends JPanel {
 
 	      this.setBackground(Color.WHITE);
 	      this.setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
-	      AutoTrader autoTrader = new AutoTrader(portal);
+	      Trader Trader = new Trader(portal);
 	      
 	      JButton logBtn = new JButton("PrintLog");
 	      
 	      JButton shareSecrets = new JButton("Share stocks");
-	      
+	      JButton getSecrets = new JButton("Get SM");
 	      
 
 	      JLabel lblAutoTrade = new JLabel("AutoTrade");
@@ -167,21 +175,23 @@ public class UTeamPanel extends JPanel {
 	         @Override
 	         public void actionPerformed(ActionEvent e) {
 	            // TODO Auto-generated method stub
-	            if(runAutoTrade.isSelected() && e.getSource() != logBtn){
-	               autoTrader.STOP = false;
+	            if(runAutoTrade.isSelected() && e.getSource() == runAutoTrade){
 	               runAutoTrade.setEnabled(false);
-	               autoTrader.start();
+	               Trader.start();
 	            }
-	            if(stopAutoTrade.isSelected()&& e.getSource() != logBtn){
-	               autoTrader.STOP = true;
+	            if(stopAutoTrade.isSelected()&& e.getSource() == stopAutoTrade){
+	               Trader.STOP = true;
 	               runAutoTrade.setEnabled(true);
 	            }
 	            if(e.getSource() == logBtn){
-	            	autoTrader.logPredictionsAIN();
+	            	//autoTrader.logPredictionsAIN();
 	            	//System.out.println(autoTrader.log);
 	            }
 	            if(e.getSource() == shareSecrets){
 	            	shareSecrets();
+	            }
+	            if(e.getSource() == getSecrets){
+	            	getTopSecretMessages(5);
 	            }
 
 
@@ -196,7 +206,7 @@ public class UTeamPanel extends JPanel {
         JTextArea alterspace;
         JTextArea incomingMessageArea;
         
-        
+        shareSecrets.addActionListener(tradeListener);
         alterspace = new JTextArea(3,30);
         alterspace.setEditable(true);
         alterspace.setBackground(Color.LIGHT_GRAY);
@@ -224,11 +234,12 @@ public class UTeamPanel extends JPanel {
         jamPanel.add(alter);
     }
     */
-    
+        getSecrets.addActionListener(tradeListener);
         logBtn.addActionListener(tradeListener);
 		runAutoTrade.addActionListener(tradeListener);
 		stopAutoTrade.addActionListener(tradeListener);
-		
+		this.add(shareSecrets);
+		this.add(getSecrets);
 		this.add(logBtn);
 		this.add(lblAutoTrade);
 		this.add(stopAutoTrade);
@@ -250,28 +261,66 @@ public class UTeamPanel extends JPanel {
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
-
-		String insert = "INSERT INTO u1 (username, secretmessage) " +
-				"VALUES(?, ?, ?, ?, ?)";
+		
+		String message = AES.encrypt(getNewSecretMessage());
+		String insert = "INSERT INTO u1 (username, secmessage) " +
+				"VALUES(?, ?)";
 		try (PreparedStatement statement = connection.prepareStatement(insert)) {
 
 				statement.setString(1, UserData.USER);
-				statement.setString(2, getNewSecretMessage());
+				statement.setString(2, message);
 				statement.addBatch();
 				statement.execute();
 				
 			}
 			catch (Exception e) {
-				// TODO: handle exception
+				e.printStackTrace();
 			}
 
 		
 	}
+	
+	public ArrayList<String> getTopSecretMessages(int num){
+		ArrayList<String> secMessages = new ArrayList<String>();
+		
+		try {
+			connection = DriverManager.getConnection(jdbcUrl, username, password);
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		
+		String message = AES.encrypt(getNewSecretMessage().trim());
+		
+		
+		try (Statement statement = connection.createStatement()) {
+			//"SELECT username, secmessage, time from u1 where time >= DATE_SUB(NOW(), INTERVAL 60 MINUTE) ORDER BY time DESC;"
+			String queryString = "SELECT username, secmessage, time from u1 where time >= DATE_SUB(NOW(), INTERVAL 60 MINUTE) ORDER BY time DESC limit " + num + ";";
+			ResultSet resultSet = statement.executeQuery(queryString);
+			
+			while (resultSet.next()) {
+				String str = resultSet.getString(2);
+				str = AES.decrypt(str.trim());
+				secMessages.add(str);
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		for(String s: secMessages)
+			System.out.println(s.toString()+ "          MEMEME");
+
+		return secMessages;
+	}
+	//XXX pull from server. panel doesnt update
 		public String getNewSecretMessage(){
 			portal.messagePanel.update();
 			String message = portal.messagePanel.secretMessage.body;
 			return message;
 		}
-
+		
+		public static void main(String args[]){
+			String AESKey = "thisismykey";
+			AES.setKey(AESKey);
+			System.out.println(AES.encrypt("AQU:101.56-93.80-91.70 AIN:98.74-95.34-120.10 TAN:103.56-117.27-106.34".trim()));
+		}
 
 }
