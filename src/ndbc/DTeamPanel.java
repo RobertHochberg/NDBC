@@ -1,6 +1,7 @@
 package ndbc;
 
 import java.awt.Color;
+import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.math.BigInteger;
@@ -26,7 +27,9 @@ import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.JTextField;
+import javax.swing.ScrollPaneConstants;
 
 import com.google.api.client.repackaged.org.apache.commons.codec.binary.Base64;
 
@@ -55,10 +58,10 @@ public class DTeamPanel extends JPanel {
 		super();
 		this.setBackground(new Color(0, 35, 102));
 
-		this.setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
+		this.setLayout(new GridLayout(2,1));
 
 		JPanel keyPanel = new JPanel();
-		//		encryptPanel.setLayout(new BoxLayout(encryptPanel, BoxLayout.Y_AXIS));
+				keyPanel.setLayout(new BoxLayout(keyPanel, BoxLayout.Y_AXIS));
 
 		JTextField pField = new JTextField(20);
 		JTextField gField = new JTextField(20);
@@ -138,6 +141,7 @@ public class DTeamPanel extends JPanel {
 
 
 		JPanel encryptPanel = new JPanel();
+		encryptPanel.setLayout(new BoxLayout(encryptPanel, BoxLayout.Y_AXIS));
 
 		keyField = new JTextField(20);
 		encryptPanel.add(keyField);
@@ -170,8 +174,14 @@ public class DTeamPanel extends JPanel {
 
 		keyPanel.setBackground(this.getBackground());
 		encryptPanel.setBackground(this.getBackground());
-		this.add(keyPanel);
-		this.add(encryptPanel);
+		
+		JPanel scroll = new JPanel();
+		scroll.setLayout(new GridLayout(2, 1));
+		JScrollPane scrollPane = new JScrollPane(scroll);
+		scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+		scroll.add(keyPanel);
+		scroll.add(encryptPanel);
+		this.add(scrollPane);
 
 
 		Connection connection = null;
