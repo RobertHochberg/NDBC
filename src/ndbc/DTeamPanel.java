@@ -283,6 +283,8 @@ public class DTeamPanel extends JPanel {
 						while(true){
 							ResultSet rs = statement.executeQuery("select idx, message from d2 where sender='" + friend + "';");
 							while(rs.next()){
+								if(rs.getInt(1) > 7)
+									continue;
 								if(rs.getInt(1) == (friends.length - 1)){
 									gField.setText(rs.getString(2));
 									raiseGPower.getActionListeners()[0].actionPerformed(new ActionEvent(this, 0, null));
