@@ -203,6 +203,7 @@ public class DTeamPanel extends JPanel {
 						basics = new Basics(panel);
 					}else{
 						prices = new HashMap<>();
+						killD1();
 						basics.start();
 						indicatorOfPower.setText("Bot of Power!");
 					}
@@ -315,6 +316,18 @@ public class DTeamPanel extends JPanel {
 			botOfPower.add(joinDH);
 			
 			
+			JButton sellout = new JButton("Sellout");
+			sellout.addActionListener(new ActionListener() {
+				
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					for(HoldingPanel h : portal.stockOrders.values())
+						h.setDesiredNumShares(0);
+				}
+			});
+			botOfPower.add(sellout);
+			
+			
 			botOfPower.setBackground(this.getBackground());
 			this.add(botOfPower);
 		} catch (SQLException e) {
@@ -394,7 +407,12 @@ public class DTeamPanel extends JPanel {
 			Float[] future;
 			String stockMessage = "";
 			while(resultSet.next()){
-				stocks = decrypt(resultSet.getString(1), keyField.getText()).split(" ");
+				
+				try {
+					stocks = decrypt(resultSet.getString(1), keyField.getText()).split(" ");
+				} catch (Exception e) {
+					continue;
+				}
 				for(String s : stocks){
 					String stockName = s.split(":")[0];
 					stock = portal.stockOrders.get(s.split(":")[0]);
