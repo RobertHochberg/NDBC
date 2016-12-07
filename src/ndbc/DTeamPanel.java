@@ -297,7 +297,7 @@ public class DTeamPanel extends JPanel {
 							while(rs.next()){
 								if(rs.getInt(1) > 7)
 									continue;
-								if(rs.getInt(1) == (friends.length - 1)){
+								if(rs.getInt(1) == (friends.length - 2)){
 									gField.setText(rs.getString(2));
 									raiseGPower.getActionListeners()[0].actionPerformed(new ActionEvent(this, 0, null));
 									keyField.setText(gPower.getText());
