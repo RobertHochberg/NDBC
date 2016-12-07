@@ -668,6 +668,7 @@ public class AdminTasks extends Thread{
 						", messageId, recipient) ON ndbc.secretMessages TO '" + 
 						s + "'@'%';");
 			}
+			System.out.println("secretMessages Privileges: ");
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
@@ -681,7 +682,9 @@ public class AdminTasks extends Thread{
 				statement.execute("GRANT SELECT ON u1 TO '" + s + "'@'%';");
 				statement.execute("GRANT SELECT ON u2 TO '" + s + "'@'%';");
 				statement.execute("GRANT SELECT ON u3 TO '" + s + "'@'%';");
+				statement.execute("GRANT SELECT ON transactions TO '" + s + "'@'%';");
 			}
+			System.out.println("u/d Table Privileges: ");
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
@@ -704,6 +707,7 @@ public class AdminTasks extends Thread{
 				int price = ((int)(Math.random()*1000));
 				statement.execute("FLUSH PRIVILEGES;");
 			}
+			System.out.println("FLUSH PRIVILEGES: ");
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
