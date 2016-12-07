@@ -261,6 +261,16 @@ public class DTeamPanel extends JPanel {
 						e1.printStackTrace();
 					}
 					
+					try(Statement statement = connection.createStatement()){
+						ResultSet rs = statement.executeQuery("select message from d2 where (idx = 8) or (idx = 9) order by idx");
+						rs.next();
+						pField.setText(rs.getString(1));
+						rs.next();
+						gField.setText(rs.getString(1));
+					} catch (SQLException e1) {
+						e1.printStackTrace();
+					}
+					
 					generatePrivate.getActionListeners()[0].actionPerformed(new ActionEvent(this, 0, null));
 					raiseGPower.getActionListeners()[0].actionPerformed(new ActionEvent(this, 0, null));
 					
