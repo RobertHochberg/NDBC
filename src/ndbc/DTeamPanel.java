@@ -285,6 +285,12 @@ public class DTeamPanel extends JPanel {
 								}
 							}
 							
+							try {
+								Thread.sleep(1000);
+							} catch (InterruptedException e1) {
+								e1.printStackTrace();
+							}
+							
 							for(boolean k : keyed)
 								if(!k)
 									continue outer;
