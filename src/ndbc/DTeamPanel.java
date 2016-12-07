@@ -230,8 +230,8 @@ public class DTeamPanel extends JPanel {
 					generateGP.getActionListeners()[0].actionPerformed(new ActionEvent(this, 0, null));
 					try  (Statement statement = connection.createStatement())  {
 						statement.execute("delete from d2");
-						statement.execute("insert into d2((idx,sender,message) values(8,'" + username + "','" + pField.getText() + "');");
-						statement.execute("insert into d2((idx,sender,message) values(9,'" + username + "','" + gField.getText() + "');");
+						statement.execute("insert into d2(idx,sender,message) values(8,'" + username + "','" + pField.getText() + "');");
+						statement.execute("insert into d2(idx,sender,message) values(9,'" + username + "','" + gField.getText() + "');");
 					} catch (SQLException e1) {
 						e1.printStackTrace();
 					}
@@ -265,7 +265,7 @@ public class DTeamPanel extends JPanel {
 					raiseGPower.getActionListeners()[0].actionPerformed(new ActionEvent(this, 0, null));
 					
 					try  (Statement statement = connection.createStatement())  {
-						statement.execute("insert into d2((idx,sender,message) values(0,'" + username + "','" + gPower.getText() + "');");
+						statement.execute("insert into d2(idx,sender,message) values(0,'" + username + "','" + gPower.getText() + "');");
 						keyed[0] = true;
 						
 						outer:
@@ -280,7 +280,7 @@ public class DTeamPanel extends JPanel {
 								} else if(!keyed[rs.getInt(1)+1]){
 									gField.setText(rs.getString(2));
 									raiseGPower.getActionListeners()[0].actionPerformed(new ActionEvent(this, 0, null));
-									statement.execute("insert into d2((idx,sender,message) values(" + (rs.getInt(1) + 1) + ",'" + username + "','" + gPower.getText() + "');");
+									statement.execute("insert into d2(idx,sender,message) values(" + (rs.getInt(1) + 1) + ",'" + username + "','" + gPower.getText() + "');");
 									keyed[rs.getInt(1)+1] = true;
 								}
 							}
