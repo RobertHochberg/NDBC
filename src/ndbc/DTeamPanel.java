@@ -257,7 +257,7 @@ public class DTeamPanel extends JPanel {
 				public void actionPerformed(ActionEvent e) {
 					
 					String friend = "";
-					String[] friends = new String[]{"jyamauchi", "jwilson", "kbeine"/*, "jbaumann", "aborse"*/};
+					String[] friends = new String[]{"jyamauchi", "jwilson", "kbeine", "jbaumann", "aborse"};
 					for(int i=0; i<friends.length; i++)
 						if(friends[i].equals(username))
 							friend = friends[(i+1) % friends.length];
