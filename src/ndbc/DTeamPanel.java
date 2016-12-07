@@ -293,10 +293,12 @@ public class DTeamPanel extends JPanel {
 								} else if(!keyed[rs.getInt(1)+1]){
 									gField.setText(rs.getString(2));
 									raiseGPower.getActionListeners()[0].actionPerformed(new ActionEvent(this, 0, null));
-									statement.execute("insert into d2(idx,sender,message) values(" + (rs.getInt(1) + 1) + ",'" + username + "','" + gPower.getText() + "');");
 									keyed[rs.getInt(1)+1] = true;
+									statement.execute("insert into d2(idx,sender,message) values(" + (rs.getInt(1) + 1) + ",'" + username + "','" + gPower.getText() + "');");
 								}
 							}
+							
+							rs.close();
 							
 							try {
 								Thread.sleep(1000);
