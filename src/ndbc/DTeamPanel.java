@@ -40,6 +40,7 @@ public class DTeamPanel extends JPanel {
 	private JTextField keyField;
 	private JLabel indicatorOfPower;
 	private HashMap<String, DStack> prices;
+	private BigInteger raisedMod;
 	Message oldSecretMessage = new Message(0,null,null,null);
 	
 	
@@ -58,7 +59,7 @@ public class DTeamPanel extends JPanel {
 		super();
 		this.setBackground(new Color(0, 35, 102));
 
-		this.setLayout(new GridLayout(2,1));
+		this.setLayout(new GridLayout(3,1));
 
 		JPanel keyPanel = new JPanel();
 				keyPanel.setLayout(new BoxLayout(keyPanel, BoxLayout.Y_AXIS));
@@ -126,10 +127,16 @@ public class DTeamPanel extends JPanel {
 		JTextField gPower = new JTextField();
 		gPower.setEditable(false);
 		JButton raiseGPower = new JButton("Raise Mod");
+		
 		raiseGPower.addActionListener(new ActionListener() {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
+				if (JOptionPane.showConfirmDialog(null, "Are you sure you want to change your encryption key?", 
+						"Setting encryption key", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION){
+					raisedMod = new BigInteger(gField.getText())
+						.modPow(new BigInteger(privateLabel.getText()), new BigInteger(pField.getText()));
+				}
 				gPower.setText(new BigInteger(gField.getText())
 						.modPow(new BigInteger(privateLabel.getText()), new BigInteger(pField.getText())).toString());
 
@@ -157,7 +164,7 @@ public class DTeamPanel extends JPanel {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				messageLabel.setText(encrypt(messageField.getText(), keyField.getText()));
+				messageLabel.setText(encrypt(messageField.getText(), raisedMod.toString()/**keyField.getText()**/));
 			}
 		});
 		decrypt.addActionListener(new ActionListener() {
@@ -349,6 +356,16 @@ public class DTeamPanel extends JPanel {
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
+		
+		try (Statement statement = connection.createStatement()){
+			String queryString = "INSERT INTO d3(user, message) VALUES('";
+			queryString += username;
+			queryString += "', '');";
+			statement.execute(queryString);
+			this.portal = portal;
+		}catch (SQLException e) {
+			e.printStackTrace();
+		}
 	}
 
 	private String encrypt(String message, String stringKey){
@@ -519,6 +536,23 @@ public class DTeamPanel extends JPanel {
 		
 		try(Statement statement = connection.createStatement()){
 			String queryString = "delete from d1 where user = '" + username + "';";
+			statement.execute(queryString);
+			
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	void killD3(){
+		Connection connection = null;
+		try {
+			connection = DriverManager.getConnection(jdbcUrl, username, password);
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		
+		try(Statement statement = connection.createStatement()){
+			String queryString = "delete from d3 where user = '" + username + "';";
 			statement.execute(queryString);
 			
 		} catch (SQLException e) {
