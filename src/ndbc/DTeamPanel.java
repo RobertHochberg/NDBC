@@ -1,6 +1,7 @@
 package ndbc;
 
 import java.awt.Color;
+import java.awt.Font;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -28,6 +29,7 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.ScrollPaneConstants;
 
@@ -171,7 +173,7 @@ public class DTeamPanel extends JPanel {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				messageLabel.setText(decrypt(messageField.getText(), keyField.getText()));
+				messageLabel.setText(decrypt(messageField.getText(), raisedMod.toString()/**keyField.getText()**/));
 			}
 		});
 		encryptPanel.add(encrypt);
@@ -358,11 +360,77 @@ public class DTeamPanel extends JPanel {
 		}
 		
 		try (Statement statement = connection.createStatement()){
-			String queryString = "INSERT INTO d3(user, message) VALUES('";
-			queryString += username;
-			queryString += "', '');";
-			statement.execute(queryString);
-			this.portal = portal;
+			
+			HashMap<Integer, Message> messages = new HashMap<>();
+			JPanel prmsgs = new JPanel();
+			prmsgs.setLayout(new GridLayout(3,1));
+			JTextField sendmsg = new JTextField(20);
+			JTextArea dispmsgs = new JTextArea(10, 1);
+			JScrollPane scrollmsgs = new JScrollPane(dispmsgs);
+			dispmsgs.setEditable(false);
+			dispmsgs.setBackground(Color.WHITE);
+			dispmsgs.setFont(new Font("Serif", Font.PLAIN, 12));
+			
+			prmsgs.add(sendmsg);
+			JPanel buttonPanel = new JPanel();
+			buttonPanel.setLayout(new GridLayout(1, 2));
+			
+			JButton sendMessageButton = new JButton("Send");
+			sendMessageButton.addActionListener(new ActionListener() {
+				
+				public void actionPerformed(ActionEvent e) {
+					Connection connection = null;
+					try {
+						connection = DriverManager.getConnection(jdbcUrl, username, password);
+
+					} catch (SQLException e1) {
+						e1.printStackTrace();
+					}
+					String newmsg = encrypt(sendmsg.getText(), raisedMod.toString());
+					try  (Statement statement = connection.createStatement())  {
+						statement.execute("insert into d3(user,message) values('" + username + "', '" + newmsg +"');");   
+					} catch (SQLException e1) {
+						e1.printStackTrace();
+					}
+					sendmsg.setText("");
+				}
+			});
+			buttonPanel.add(sendMessageButton);
+			
+			JButton getMessagesButton = new JButton("Receive");
+			getMessagesButton.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					Connection connection = null;
+					try {
+						connection = DriverManager.getConnection(jdbcUrl, username, password);
+					} catch(SQLException e1){
+						e1.printStackTrace();
+					}
+					try(Statement statement = connection.createStatement()){
+						ResultSet resultSet = statement.executeQuery("select * from d3");
+						while (resultSet.next()) {
+							Message m = new Message(resultSet.getString(3), resultSet.getString(2));
+							messages.put(resultSet.getInt(1), m);
+						}
+							
+					} catch (SQLException e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
+					}
+					String msgs = "";
+					Integer[] ids = messages.keySet().toArray(new Integer[1]);
+					Arrays.sort(ids);
+					for(Integer i : ids){
+						msgs = msgs + messages.get(i).sender + "\n";
+						msgs = msgs + decrypt(messages.get(i).body, raisedMod.toString()) + "\n\n";
+					}
+					dispmsgs.setText(msgs);
+				}
+			});
+			buttonPanel.add(getMessagesButton);
+			prmsgs.add(buttonPanel);
+			prmsgs.add(scrollmsgs);
+			this.add(prmsgs);
 		}catch (SQLException e) {
 			e.printStackTrace();
 		}
@@ -412,8 +480,6 @@ public class DTeamPanel extends JPanel {
 
 		return null;
 	}
-
-
 
 	void updateBotofPower(){
 		Connection connection = null;
