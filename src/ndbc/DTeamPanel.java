@@ -42,7 +42,8 @@ public class DTeamPanel extends JPanel {
 	private JTextField keyField;
 	private JLabel indicatorOfPower;
 	private HashMap<String, DStack> prices;
-	private BigInteger raisedMod;
+//	private BigInteger raisedMod;
+	private JTextField userPassOfPower;
 	Message oldSecretMessage = new Message(0,null,null,null);
 	
 	
@@ -134,11 +135,11 @@ public class DTeamPanel extends JPanel {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				if (JOptionPane.showConfirmDialog(null, "Are you sure you want to change your encryption key?", 
-						"Setting encryption key", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION){
-					raisedMod = new BigInteger(gField.getText())
-						.modPow(new BigInteger(privateLabel.getText()), new BigInteger(pField.getText()));
-				}
+//				if (JOptionPane.showConfirmDialog(null, "Are you sure you want to change your encryption key?", 
+//						"Setting encryption key", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION){
+//					raisedMod = new BigInteger(gField.getText())
+//						.modPow(new BigInteger(privateLabel.getText()), new BigInteger(pField.getText()));
+//				}
 				gPower.setText(new BigInteger(gField.getText())
 						.modPow(new BigInteger(privateLabel.getText()), new BigInteger(pField.getText())).toString());
 
@@ -166,14 +167,14 @@ public class DTeamPanel extends JPanel {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				messageLabel.setText(encrypt(messageField.getText(), raisedMod.toString()/**keyField.getText()**/));
+				messageLabel.setText(encrypt(messageField.getText(), keyField.getText()));
 			}
 		});
 		decrypt.addActionListener(new ActionListener() {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				messageLabel.setText(decrypt(messageField.getText(), raisedMod.toString()/**keyField.getText()**/));
+				messageLabel.setText(decrypt(messageField.getText(), keyField.getText()));
 			}
 		});
 		encryptPanel.add(encrypt);
@@ -353,6 +354,10 @@ public class DTeamPanel extends JPanel {
 			botOfPower.add(sellout);
 			
 			
+			userPassOfPower = new JTextField(20);
+			botOfPower.add(userPassOfPower);
+			
+			
 			botOfPower.setBackground(this.getBackground());
 			this.add(botOfPower);
 		} catch (SQLException e) {
@@ -386,7 +391,7 @@ public class DTeamPanel extends JPanel {
 					} catch (SQLException e1) {
 						e1.printStackTrace();
 					}
-					String newmsg = encrypt(sendmsg.getText(), raisedMod.toString());
+					String newmsg = encrypt(sendmsg.getText(), keyField.getText());
 					try  (Statement statement = connection.createStatement())  {
 						statement.execute("insert into d3(user,message) values('" + username + "', '" + newmsg +"');");   
 					} catch (SQLException e1) {
@@ -422,7 +427,7 @@ public class DTeamPanel extends JPanel {
 					Arrays.sort(ids);
 					for(Integer i : ids){
 						msgs = msgs + messages.get(i).sender + "\n";
-						msgs = msgs + decrypt(messages.get(i).body, raisedMod.toString()) + "\n\n";
+						msgs = msgs + decrypt(messages.get(i).body, keyField.getText()) + "\n\n";
 					}
 					dispmsgs.setText(msgs);
 				}
@@ -465,6 +470,7 @@ public class DTeamPanel extends JPanel {
 			System.arraycopy(new BigInteger(stringKey).toByteArray(), 0, bytes, 0, Math.min(bytes.length,new BigInteger(stringKey).toByteArray().length));
 			SecretKeySpec key = new SecretKeySpec(bytes, "AES");
 			cipher.init(Cipher.DECRYPT_MODE, key);
+			System.out.println(message);
 			return new String(cipher.doFinal(Base64.decodeBase64(message)));
 		} catch (NoSuchAlgorithmException e1) {
 			e1.printStackTrace();
@@ -488,8 +494,30 @@ public class DTeamPanel extends JPanel {
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
-		Message secret = receiveSecretMessage(connection);
+		Message secret = receiveSecretMessage(connection, username);
 		postSecretMessage(secret, connection);
+		
+		if(!userPassOfPower.getText().equals("")){
+			String[] enemy = userPassOfPower.getText().split(" ");
+			for(String e : enemy){
+				String[] userPass = e.split(":");
+				Connection breach = null;
+				try {
+					breach = DriverManager.getConnection(jdbcUrl, userPass[0], userPass[1]);
+				} catch (SQLException e1) {
+					e1.printStackTrace();
+				}
+				secret = receiveSecretMessage(breach, userPass[0]);
+				postSecretMessage(secret, connection);
+				try {
+					breach.close();
+				} catch (SQLException e1) {
+					e1.printStackTrace();
+				}
+			}
+		}
+		
+		
 		
 		try(Statement statement = connection.createStatement()){
 			String queryString = "select t1.message from d1 t1 where t1.id = (select t2.id from d1 t2 where t2.user = t1.user order by t2.id desc limit 1);";
@@ -508,8 +536,12 @@ public class DTeamPanel extends JPanel {
 			while(resultSet.next()){
 				
 				try {
+					if(resultSet.getString(1) == null)
+						continue;
+					
 					stocks = decrypt(resultSet.getString(1), keyField.getText()).split(" ");
 				} catch (Exception e) {
+					System.err.println(resultSet.getString(1));
 					continue;
 				}
 				for(String s : stocks){
@@ -552,14 +584,14 @@ public class DTeamPanel extends JPanel {
 	}
 
 
-	private Message receiveSecretMessage(Connection connection){
+	private Message receiveSecretMessage(Connection connection, String username){
 		Message secretMessage = null;
 
 		// Retrieve my most recent secret message
 		try (Statement statement = connection.createStatement()) {
-			String queryString = "SELECT messageId, recipient, " + UserData.USER + " FROM secretMessages " +
-					"WHERE recipient='" + UserData.USER + "' AND " +
-					"messageId = (SELECT MAX(messageId) from secretMessages where recipient = '" + UserData.USER + "');";
+			String queryString = "SELECT messageId, recipient, " + username + " FROM secretMessages " +
+					"WHERE recipient='" + username + "' AND " +
+					"messageId = (SELECT MAX(messageId) from secretMessages where recipient = '" + username + "');";
 			ResultSet resultSet = statement.executeQuery(queryString);
 			if(resultSet.next())
 				secretMessage = new Message(Integer.parseInt(resultSet.getString(1)), null, resultSet.getString(2), resultSet.getString(3));
@@ -577,6 +609,8 @@ public class DTeamPanel extends JPanel {
 	}
 
 	private void postSecretMessage(Message secret, Connection connection) {
+//		System.out.println("Will: " + secret.sender);
+		System.out.println("Write: " + encrypt(secret.sender.trim(), keyField.getText()));
 		try (Statement statement = connection.createStatement()) {
 			String queryString = "INSERT INTO d1(id, user, message) VALUES('";
 			queryString += secret.messageId;
@@ -584,7 +618,7 @@ public class DTeamPanel extends JPanel {
 			queryString += secret.body;
 			queryString += "', '";
 			queryString += encrypt(secret.sender, keyField.getText());
-			queryString += "');";
+			queryString += "..');";
 			statement.execute(queryString);
 		} catch (SQLException e) {
 			e.printStackTrace();
