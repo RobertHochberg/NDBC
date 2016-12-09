@@ -37,6 +37,7 @@ public class UTeamPanel extends JPanel {
 					instanceConnectionName);
 
 	Connection connection = null;
+	JButton shareSecrets = new JButton("Share stocks");
 
 
 	private final BigInteger p = BigInteger.valueOf(2).pow(128)
@@ -152,11 +153,11 @@ public class UTeamPanel extends JPanel {
 
 		this.setBackground(Color.WHITE);
 		this.setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
-		Trader Trader = new Trader(portal);
+		Trader Trader = new Trader(portal, this);
 
 		JButton logBtn = new JButton("Enter Key");
 
-		JButton shareSecrets = new JButton("Share stocks");
+		shareSecrets = new JButton("Share stocks");
 		JButton getSecrets = new JButton("Get SM");
 
 
