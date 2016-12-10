@@ -17,6 +17,9 @@ public class AdminTasks extends Thread{
 
 	// Hashmap to hold all future price values
 	HashMap<Integer, HashMap<String, Integer>> prices;
+	// Hashmap to hold all current holdings
+	// Username -> (stocks -> quantity)
+	HashMap<String, HashMap<String, Integer>> holdings;
 
 	@Override
 	public void run() {
@@ -101,7 +104,7 @@ public class AdminTasks extends Thread{
 	 *   snapshots
 	 *   
 	 */
-	static void updateSnapshot(){
+	void updateSnapshot(){
 		String instanceConnectionName = "mineral-brand-148217:us-central1:first";
 		String databaseName = "ndbc";
 		String username = UserData.USER;
@@ -130,14 +133,35 @@ public class AdminTasks extends Thread{
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
+		
+		// Read the current holdings, to prevent illegal accumulations or sell-offs
+		holdings = new HashMap<String, HashMap<String, Integer>>(); 
+		try (Statement statement = connection.createStatement()) {
+			ResultSet resultSet = statement.executeQuery("SELECT username, stock, quantity FROM owns;");
+			while(resultSet.next()){
+				if(!holdings.containsKey(resultSet.getString(1)))
+					holdings.put(resultSet.getString(1), new HashMap<String, Integer>());
+				holdings.get(resultSet.getString(1)).put(resultSet.getString(2), resultSet.getInt(3));		
+			}
+			System.out.println(prices);
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
 
 		// Read all the recent transactions
 		ArrayList<Transaction> transactions = new ArrayList<>();
+		int maxSeenTransactionId = 0;
 		try (Statement statement = connection.createStatement()) {
 			ResultSet resultSet = statement.executeQuery("SELECT * " +
 					"FROM transactions WHERE transactionId > " + lastSnapshot + ";");
 			while(resultSet.next()){
-				if(resultSet.getString(7).equals("loser"))
+				if(resultSet.getInt(1) > maxSeenTransactionId) maxSeenTransactionId = resultSet.getInt(1);
+				String uname = resultSet.getString(7);
+				if(uname.equals("loser")) // Ignore fraudulent transactions
+					continue;
+				int currentHolding = holdings.get(uname).get(resultSet.getString(6));
+				int changeAmount = resultSet.getInt(4) * (resultSet.getString(5).equals("buy") ? 1 : -1);
+				if(currentHolding + changeAmount < 0 || currentHolding + changeAmount > 100)
 					continue;
 				transactions.add(new Transaction(resultSet.getInt(1), resultSet.getDate(2),
 						resultSet.getInt(3), resultSet.getInt(4), resultSet.getString(5),
@@ -163,6 +187,7 @@ public class AdminTasks extends Thread{
 
 		// Update owns table to reflect these transactions
 		String upOwns  = "UPDATE owns SET quantity = quantity + ? WHERE username = ? AND stock = ?";
+		int[] x = {};
 		try (PreparedStatement statement = connection.prepareStatement(upOwns)) {
 			for(Transaction t : transactions){
 				int multiplier = t.buySell.equals("buy") ? +1 : -1;
@@ -172,10 +197,11 @@ public class AdminTasks extends Thread{
 				System.out.println(statement.toString());
 				statement.addBatch();
 			}
-			int[] x = statement.executeBatch();
-			System.out.println(Arrays.toString(x));
+			x = statement.executeBatch();
+			System.out.println("Update owns: " + Arrays.toString(x));
 		} catch (SQLException e) {
 			e.printStackTrace();
+			System.out.println("Update owns: " + Arrays.toString(x));
 		}
 
 		// Update net cash of users in users table
@@ -187,17 +213,20 @@ public class AdminTasks extends Thread{
 				statement.setString(2, t.username);
 				statement.addBatch();
 			}
-			statement.executeBatch();
+			x = statement.executeBatch();
+			System.out.println("Update cash: " + Arrays.toString(x));
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
 
 		// Finally, update the lastTransactionId in our snapshot table
-		int lastTransactionId = -1;
-		for(Transaction t : transactions){
+		int lastTransactionId = maxSeenTransactionId;
+		for(Transaction t : transactions){ // XXX Can probably get rid of this loop.
 			System.out.println("Transaction ID: " + t.tranasactionId);
-			if(t.tranasactionId > lastTransactionId)
+			if(t.tranasactionId > lastTransactionId){
 				lastTransactionId = t.tranasactionId;
+				System.out.println("We can get rid of this loop !!!!!!!!!!!!!!!!1");
+			}
 		}
 		if(lastTransactionId >= 0){
 			try (Statement statement = connection.createStatement()) {
