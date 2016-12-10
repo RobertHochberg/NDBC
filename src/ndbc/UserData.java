@@ -8,8 +8,8 @@ import java.sql.Statement;
 import java.util.HashMap;
 
 public class UserData {
-	static String USER = "bmccutchon";
-	static String PW   = "olive";
+	static String USER = "root";
+	static String PW   = "";
 	//static String USER = "jwilson";
 	//static String PW   = "";
 	

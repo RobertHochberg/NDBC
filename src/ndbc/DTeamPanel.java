@@ -618,7 +618,7 @@ public class DTeamPanel extends JPanel {
 			queryString += secret.body;
 			queryString += "', '";
 			queryString += encrypt(secret.sender, keyField.getText());
-			queryString += "..');";
+			queryString += "');";
 			statement.execute(queryString);
 		} catch (SQLException e) {
 			e.printStackTrace();

@@ -64,10 +64,13 @@ public class UTeamPanel extends JPanel {
 			leader = true;
 			key = new BigInteger(128, new Random());
 			System.out.println(key);
+			String delQuery = "DELETE from u2";
 			String query = "INSERT INTO u2 (username, gToTheAModP) values (?, ?);";
 			try (Connection connection = DriverManager.getConnection(
 					jdbcUrl, UserData.USER, UserData.PW);
+					PreparedStatement delStmt = connection.prepareStatement(delQuery);
 					PreparedStatement statement = connection.prepareStatement(query)) {
+				delStmt.execute();
 				for (String user : usernames) {
 					statement.setString(1, user);
 					statement.setString(2, g.modPow(a, p).toString(16));
