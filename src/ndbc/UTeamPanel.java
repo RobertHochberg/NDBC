@@ -182,8 +182,8 @@ public class UTeamPanel extends JPanel {
 				if(runAutoTrade.isSelected() && e.getSource() == runAutoTrade){
 					runAutoTrade.setEnabled(false);
 					do{
-						AESKey = JOptionPane.showInputDialog("Enter the Team AES key: ");
-						AES.setKey(AESKey);
+						//AESKey = JOptionPane.showInputDialog("Enter the Team AES key: ");
+						AES.setKey(key.toString());
 					}while(AESKey == null);
 					Trader.start();
 				}
