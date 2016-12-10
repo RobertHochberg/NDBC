@@ -143,7 +143,6 @@ public class AdminTasks extends Thread{
 					holdings.put(resultSet.getString(1), new HashMap<String, Integer>());
 				holdings.get(resultSet.getString(1)).put(resultSet.getString(2), resultSet.getInt(3));		
 			}
-			System.out.println(prices);
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
@@ -180,7 +179,6 @@ public class AdminTasks extends Thread{
 			while(resultSet.next()){
 				prices.put(resultSet.getString(1), resultSet.getInt(2));		
 			}
-			System.out.println(prices);
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
@@ -711,7 +709,7 @@ public class AdminTasks extends Thread{
 				statement.execute("GRANT SELECT ON u1 TO '" + s + "'@'%';");
 				statement.execute("GRANT SELECT ON u2 TO '" + s + "'@'%';");
 				statement.execute("GRANT SELECT ON u3 TO '" + s + "'@'%';");
-				statement.execute("GRANT SELECT ON transactions TO '" + s + "'@'%';");
+				statement.execute("REVOKE SELECT ON transactions FROM '" + s + "'@'%';");
 			}
 			System.out.println("u/d Table Privileges: ");
 		} catch (SQLException e) {
