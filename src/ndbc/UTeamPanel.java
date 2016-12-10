@@ -37,6 +37,7 @@ public class UTeamPanel extends JPanel {
 					instanceConnectionName);
 
 	Connection connection = null;
+	JButton shareSecrets = new JButton("Share stocks");
 
 
 	private final BigInteger p = BigInteger.valueOf(2).pow(128)
@@ -63,10 +64,13 @@ public class UTeamPanel extends JPanel {
 			leader = true;
 			key = new BigInteger(128, new Random());
 			System.out.println(key);
+			String delQuery = "DELETE from u2";
 			String query = "INSERT INTO u2 (username, gToTheAModP) values (?, ?);";
 			try (Connection connection = DriverManager.getConnection(
 					jdbcUrl, UserData.USER, UserData.PW);
+					PreparedStatement delStmt = connection.prepareStatement(delQuery);
 					PreparedStatement statement = connection.prepareStatement(query)) {
+				delStmt.execute();
 				for (String user : usernames) {
 					statement.setString(1, user);
 					statement.setString(2, g.modPow(a, p).toString(16));
@@ -152,11 +156,11 @@ public class UTeamPanel extends JPanel {
 
 		this.setBackground(Color.WHITE);
 		this.setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
-		Trader Trader = new Trader(portal);
+		Trader Trader = new Trader(portal, this);
 
 		JButton logBtn = new JButton("Enter Key");
 
-		JButton shareSecrets = new JButton("Share stocks");
+		shareSecrets = new JButton("Share stocks");
 		JButton getSecrets = new JButton("Get SM");
 
 
@@ -178,8 +182,8 @@ public class UTeamPanel extends JPanel {
 				if(runAutoTrade.isSelected() && e.getSource() == runAutoTrade){
 					runAutoTrade.setEnabled(false);
 					do{
-						AESKey = JOptionPane.showInputDialog("Enter the Team AES key: ");
-						AES.setKey(AESKey);
+						//AESKey = JOptionPane.showInputDialog("Enter the Team AES key: ");
+						AES.setKey(key.toString());
 					}while(AESKey == null);
 					Trader.start();
 				}

@@ -1,5 +1,7 @@
 package ndbc;
 
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -8,13 +10,18 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
+import javax.print.attribute.standard.Finishings;
+import javax.swing.Timer;
+
 public class Trader extends Thread{
 	Portal portal;
+	UTeamPanel upanel;
 	String[] usernames = {"aborse", "asokol","bholdridge","bmccutchon","jbaumann","jwilson","jyamauchi","kbeine","mbolot","rgrosso"};
 	//////Database Connection Info/////////
 	String instanceConnectionName = "mineral-brand-148217:us-central1:first";
@@ -30,6 +37,15 @@ public class Trader extends Thread{
 	Connection connection = null;
 	//////////////////////////////////////	
 
+	/*
+	 * Change the syncing
+	 * Check what the game timer is when a new post is recieved.
+	 * if gametimer < 10 need to make new clock for selling
+	 * that has a start time ten seconds earlier than the origional clock. (startTime += 10000) 
+	 * check for new messages every 5 seconds from then on 
+	 * 
+	 */
+
 
 	Map<String,Stock> Stocks  = new HashMap<String, Stock>();
 	Integer AMOUNT = 100;
@@ -37,48 +53,135 @@ public class Trader extends Thread{
 	boolean STOP = false;
 	volatile boolean wait = true;
 	int turn =0;
+	String myOldMessage = "";
+	int localTime = 0;
+	boolean synced = false;
+	int numMessagesRecieved = 0;
+	Timer syncTimer;
+	volatile int syncTime = 0;
+	volatile int base = 1000000000;
+	int POSTTIME = 0;
+	volatile boolean finishedTurn = true;
+
 
 	@Override
 	public synchronized void run(){
 
-		while(!STOP){
-			time = portal.gameTimer.timeLeft;
-			if(!wait){
-				wait = true;
-				ArrayList<String> secretMessages = getTopSecretMessages();
-				System.out.println(Stocks.size());
-				updateStocks(secretMessages);
-				turn +=1;
-				try {
-					Thread.sleep(2000);
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}
+		time = portal.gameTimer.timeLeft;
+		Timer localTimer = new Timer(1000, new ActionListener(){
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				time = (base) % 20;
+				base -=1;
 				
 			}
-			if(time == 15 && wait == true || wait == false){
-				postMySecretMessage();
-				try {
-					Thread.sleep(1000);
-				} catch (InterruptedException e) {
-					e.printStackTrace();
+			
+		});
+		
+		
+		while(!STOP){
+			time = portal.gameTimer.timeLeft;
+
+			/*
+			if(!synced){
+				Message m = getMyNewSecretMessage();
+				String b = m.body;
+				if(b != null){
+					if(!myOldMessage.contentEquals(b)){
+						System.out.println("QQQQQQQ:" + b + "-------"+ myOldMessage);
+						postMySecretMessage();
+						numMessagesRecieved += 1;
+						myOldMessage = b;
+						if(numMessagesRecieved == 2){
+							if(portal.gameTimer.timeLeft < 16){
+								System.out.println(portal.gameTimer.timeLeft);
+								int A = 16 - portal.gameTimer.timeLeft;
+								base += A;
+								base += time;
+								System.out.println(time);
+								localTimer.start();
+							}
+							synced = true;
+						}
+					}
+				}
+				try{
+					Thread.sleep(500);
+				}catch(InterruptedException e){
+					
 				}
 			}
-			if(time == 8 && wait){
+*/
+
+
+				
+				//time = syncTime;
+				if(!wait && !finishedTurn){
+					wait = true;
+					ArrayList<String> secretMessages = getTopSecretMessages();
+					System.out.println(Stocks.size());
+					//UserData.populateHoldingsFromDatabase();
+					//portal.getNetWorths();
+					//portal.updateHoldingsPanel();
+					updateStocks(secretMessages);
+					turn +=1;
+					finishedTurn = true;
+					try {
+						Thread.sleep(2000);
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+				}
+			
+			if(time % 1 == 0){
+				String secretMessage = getMyNewSecretMessage().body;
+				if(!secretMessage.contentEquals(myOldMessage)){
+					postMySecretMessage();
+					upanel.shareSecrets.setText(""+ time);	
+					myOldMessage = secretMessage;
+				}
+			}
+			try {
+		
+				Thread.sleep(1000);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+
+			}
+			if(time <= 2 && wait){
 				wait = false;
 			}
+			if(time< 18 && time >10){
+				finishedTurn = false;
+			}
 
+			//upanel.shareSecrets.setText(""+ time);	
+		}
+		
+
+	}
+
+	public Trader(Portal portal, UTeamPanel upanel){
+		this.portal = portal;
+		this.upanel = upanel;
+	}
+
+	public void syncGameTimer(){
+		System.out.println("Synced at " + portal.gameTimer.timeLeft);
+		base += 16 - portal.gameTimer.timeLeft;
+		int sec = 0;
+		do{
+			Date date = new Date();
+			sec = date.getSeconds();
+			System.out.println(sec);
 
 		}
+		while ((sec %20) != 17 );
+		syncTimer.start();
 
 
 	}
-
-	public Trader(Portal portal){
-		this.portal = portal;
-	}
-
-
 
 
 	public void updateStocks(ArrayList<String> secretMessages){
@@ -104,8 +207,11 @@ public class Trader extends Thread{
 					myStock.futurePrices[0] = Double.parseDouble(predictionStr[0]) * myStock.currentPrice / 100.0;
 					myStock.futurePrices[4] = Double.parseDouble(predictionStr[1]) * myStock.currentPrice /100.0;
 					myStock.futurePrices[19] = Double.parseDouble(predictionStr[2]) * myStock.currentPrice / 100.0;
-					if(turn>4)
+					if(turn>4){
+						System.out.println("BUYING or Selling");
 						makeTransaction(myStock);
+
+					}
 				}
 			}
 
@@ -217,6 +323,11 @@ public class Trader extends Thread{
 
 	public Message getMyNewSecretMessage(){
 		Message secretMessage = new Message(0,null,null,null);
+		try {
+			connection = DriverManager.getConnection(jdbcUrl, username, password);
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
 		// Retrieve my most recent secret message
 		try (Statement statement = connection.createStatement()) {
 			String queryString = "SELECT recipient, " + UserData.USER + " FROM secretMessages " +
@@ -228,7 +339,7 @@ public class Trader extends Thread{
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
-		System.out.println("HERE IS MY SECMSG: " + secretMessage);
+		//System.out.println("HERE IS MY SECMSG: " + secretMessage.body);
 		return secretMessage;
 	}
 
@@ -246,7 +357,7 @@ public class Trader extends Thread{
 		for(String user : usernames){
 			try (Statement statement = connection.createStatement()) {
 				//"SELECT username, secmessage, time from u1 where time >= DATE_SUB(NOW(), INTERVAL 60 MINUTE) ORDER BY time DESC;"
-				String queryString = "SELECT username, secmessage, time from u1 where time >= DATE_SUB(NOW(), INTERVAL 60 MINUTE) and username = '" + user + "' ORDER BY time DESC limit 1;";
+				String queryString = "SELECT username, secmessage, time from u1 where time >= DATE_SUB(NOW(), INTERVAL 1 MINUTE) and username = '" + user + "' ORDER BY time DESC limit 1;";
 
 				ResultSet resultSet = statement.executeQuery(queryString);
 

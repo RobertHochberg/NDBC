@@ -141,6 +141,8 @@ public class MessagePanel extends JPanel implements ActionListener{
 	 * Write messages from our messages HashMap to the incoming message area
 	 */
 	private void updateIncomingMessageArea(){
+		if(messages.size() < 1)
+			return;
 		String msgs = "";
 		Integer[] ids = messages.keySet().toArray(new Integer[1]);
 		Arrays.sort(ids);
